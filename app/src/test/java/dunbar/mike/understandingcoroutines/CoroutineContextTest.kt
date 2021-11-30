@@ -157,7 +157,7 @@ class CoroutineContextTest {
         }
         assertEquals(5, parentValue)
         assertEquals(5, childValueInherited)
-        assertEquals(10 , childValueOverridden)
+        assertEquals(10, childValueOverridden)
     }
 
     class MyCustomContext(val value: Int) : CoroutineContext.Element {

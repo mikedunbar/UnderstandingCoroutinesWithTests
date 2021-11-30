@@ -1,0 +1,3 @@
+package dunbar.mike.understandingcoroutines
+
+class CancellationTest
