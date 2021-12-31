@@ -25,7 +25,7 @@ class JobTest {
 
     @Test
     fun `test launch returns a Job`() {
-        val job: Job = GlobalScope.launch {}
+        assertTrue(GlobalScope.launch { } is Job)
     }
 
     @Test
@@ -46,10 +46,10 @@ class JobTest {
         val job3 = GlobalScope.launch(start = CoroutineStart.DEFAULT) {}
         assertTrue(job3.isActive)
 
-        val job4 = GlobalScope.launch { }
+        val job4 = GlobalScope.async { }
         assertTrue(job4.isActive)
 
-        val job5 = GlobalScope.launch(start = CoroutineStart.DEFAULT) {}
+        val job5 = GlobalScope.async(start = CoroutineStart.DEFAULT) {}
         assertTrue(job5.isActive)
     }
 
@@ -76,12 +76,13 @@ class JobTest {
         assertFalse(job.isActive)
     }
 
+
     @Test
     fun `test cancel moves a Job to Cancelled state`() {
         val job = Job()
         job.cancel("you're done")
         assertTrue(job.isCancelled)
-        assertFalse(job.isCompleted)
+        assertTrue(job.isCompleted)
         assertFalse(job.isActive)
     }
 
@@ -103,6 +104,7 @@ class JobTest {
             val job: Job? = coroutineContext[Job]
             assertNotNull(job)
             assertTrue(job is CoroutineContext)
+            assertTrue(job!!.isActive)
         }
     }
 
@@ -156,7 +158,7 @@ class JobTest {
     }
 
     @Test
-    fun `test factory function fake constructor returns a CompleteableJob`() {
+    fun `test factory function fake constructor returns a CompletableJob`() {
         val job = Job()
         assertTrue(job is CompletableJob)
     }
