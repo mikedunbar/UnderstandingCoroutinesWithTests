@@ -99,7 +99,7 @@ class CoroutineScopeFunctionsTest {
         runBlocking {
             val startTime = System.currentTimeMillis()
             val a = coroutineScope {
-                delay(50)
+                    delay(50)
                 10
             }
             val b = coroutineScope {
@@ -129,9 +129,9 @@ class CoroutineScopeFunctionsTest {
     @Test
     fun `test coroutineScope waits for all children to complete before completing itself`() {
         runBlocking {
-            var parent: Job?
+            var parentJob: Job?
             coroutineScope {
-                parent = coroutineContext[Job]
+                parentJob = coroutineContext[Job]
                 val child1 = launch {
                     delay(50)
                 }
@@ -139,18 +139,129 @@ class CoroutineScopeFunctionsTest {
                     delay(100)
                 }
 
+                assertFalse(parentJob!!.isCompleted)
                 delay(75)
                 assertTrue(child1.isCompleted)
                 assertFalse(child2.isCompleted)
-                assertFalse(parent!!.isCompleted)
+                assertFalse(parentJob!!.isCompleted)
 
                 delay(50)
                 assertTrue(child2.isCompleted)
-                assertFalse(parent!!.isCompleted)
+                assertFalse(parentJob!!.isCompleted)
             }
-            assertTrue(parent!!.isCompleted)
+            assertTrue(parentJob!!.isCompleted)
         }
     }
 
+    @Test
+    fun `test coroutineScope cancels all children when parent in cancelled`() {
+        runBlocking {
+            var child1Completed = false
+            var child2Completed = false
+            var child1Job: Job? = null
+            var child2Job: Job? = null
+            val parentJob = launch {
+                coroutineScope {
+                    child1Job = launch {
+                        delay(50)
+                        child1Completed = true
+                    }
+                    child2Job = launch {
+                        delay(50)
+                        child2Completed = true
+                    }
+                }
+            }
+            delay(10)
+            parentJob.cancelAndJoin()
+            assertFalse(child1Completed)
+            assertFalse(child2Completed)
+            assertTrue(child1Job!!.isCancelled)
+            assertTrue(child2Job!!.isCancelled)
+        }
+    }
 
+    @Test
+    fun `test coroutineScope exception cancels all children and rethrows`() {
+        runBlocking {
+            var child1Completed = false
+            var child2Completed = false
+            var child1Job: Job? = null
+            var child2Job: Job? = null
+            var caughtExceptionMsg: String? = "not the message"
+            launch {
+                try {
+                    coroutineScope {
+                        child1Job = launch {
+                            delay(50)
+                            child1Completed = true
+                        }
+                        child2Job = launch {
+                            delay(50)
+                            child2Completed = true
+                        }
+                        delay(10)
+                        throw Exception("the message")
+                    }
+                } catch (e: Exception) {
+                    caughtExceptionMsg = e.message
+                }
+            }
+            delay(100)
+            assertFalse(child1Completed)
+            assertFalse(child2Completed)
+            assertTrue(child1Job!!.isCancelled)
+            assertTrue(child2Job!!.isCancelled)
+            assertEquals("the message", caughtExceptionMsg)
+        }
+    }
+
+    @Test
+    fun `test coroutineScope exception in a child cancels all children and rethrows`() {
+        runBlocking {
+            var child2Completed = false
+            var child1Job: Job? = null
+            var child2Job: Job? = null
+            var caughtExceptionMsg: String? = "not the message"
+            launch {
+                try {
+                    coroutineScope {
+                        child1Job = launch {
+                            delay(20)
+                            throw Exception("the message")
+                        }
+                        child2Job = launch {
+                            delay(50)
+                            child2Completed = true
+                        }
+                        delay(10)
+
+                    }
+                } catch (e: Exception) {
+                    caughtExceptionMsg = e.message
+                }
+            }
+            delay(100)
+            assertFalse(child2Completed)
+            assertTrue(child1Job!!.isCancelled)
+            assertTrue(child2Job!!.isCancelled)
+            assertEquals("the message", caughtExceptionMsg)
+        }
+    }
+
+    private suspend fun doMultipleAsyncCalls(): Int = coroutineScope {
+        val first = async { networkFetch1() }
+        val second = async { networkFetch2() }
+        first.await() + second.await()
+    }
+
+    @Test
+    fun `test coroutineScope is great for multiple async calls in a suspend function`() {
+        runBlocking {
+            val startTime = System.currentTimeMillis()
+            assertEquals(10, doMultipleAsyncCalls())
+            val elapsedTime = System.currentTimeMillis() - startTime
+            assertTrue(elapsedTime in 51..99)
+        }
+    }
 }
