@@ -6,6 +6,7 @@ import org.junit.Assert.*
 import org.junit.Test
 import java.util.*
 
+@ExperimentalCoroutinesApi
 class CancellationTest {
     private val ints = Collections.synchronizedList(mutableListOf<Int>())
 
@@ -247,11 +248,12 @@ class CancellationTest {
         runBlocking {
             val job = launch {
                 repeat(100) { count ->
+                    delay(5)
                     yield()
                     ints.add(count)
                 }
             }
-            delay(2) // feels like shouldn't be needed
+            delay(20) // feels like shouldn't be needed
             job.cancelAndJoin()
             print("ints.size=${ints.size}")
             assertTrue(ints.size in 1..99)
