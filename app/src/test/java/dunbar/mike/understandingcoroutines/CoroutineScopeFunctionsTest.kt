@@ -99,7 +99,7 @@ class CoroutineScopeFunctionsTest {
         runBlocking {
             val startTime = System.currentTimeMillis()
             val a = coroutineScope {
-                    delay(50)
+                delay(50)
                 10
             }
             val b = coroutineScope {
@@ -262,6 +262,73 @@ class CoroutineScopeFunctionsTest {
             assertEquals(10, doMultipleAsyncCalls())
             val elapsedTime = System.currentTimeMillis() - startTime
             assertTrue(elapsedTime in 51..99)
+        }
+    }
+
+    @Test
+    fun `test withContext is the same as coroutineScope, but the CoroutineContext is added to the parent scope`() {
+        var child1Name: String? = null
+        var child2Name: String? = null
+        runBlocking(CoroutineName("Parent")) {
+            coroutineScope {
+                child1Name = coroutineContext[CoroutineName]?.name
+            }
+            withContext(CoroutineName("Child")) {
+                child2Name = coroutineContext[CoroutineName]?.name
+            }
+            assertEquals("Parent", child1Name)
+            assertEquals("Child", child2Name)
+        }
+    }
+
+    @Test
+    fun `test supervisorScope is the same as coroutineScope, but replaces Job with SupervisorJob`() {
+        runBlocking {
+            var child2Completed = false
+            supervisorScope {
+                launch {
+                    delay(50)
+                    throw Exception("Whoops")
+                }
+
+                launch {
+                    delay(100)
+                    child2Completed = true
+                }
+            }
+            assertEquals(true, child2Completed)
+        }
+    }
+
+    @Test
+    fun `test withTimeout is the same as coroutineScope, but throws if takes too long`() {
+        runBlocking {
+            var caught = Exception("wrong one")
+            try {
+                withTimeout(100) {
+                    delay(150)
+                    fail("exception not thrown")
+                }
+            } catch (e: TimeoutCancellationException) {
+                caught = e
+            }
+            assertTrue(caught is TimeoutCancellationException)
+        }
+    }
+
+    @Test
+    fun `test withTimeout is the same as coroutineScope, but returns null (instead of throwing) if takes too long`() {
+        runBlocking {
+            var result: Int? = null
+            try {
+                result = withTimeoutOrNull(100) {
+                    delay(150)
+                    5
+                }
+            } catch (e: TimeoutCancellationException) {
+                fail("exception should not have been thrown")
+            }
+            assertNull(result)
         }
     }
 }

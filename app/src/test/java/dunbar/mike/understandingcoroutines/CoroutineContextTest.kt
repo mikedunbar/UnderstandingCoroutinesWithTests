@@ -59,7 +59,7 @@ class CoroutineContextTest {
     }
 
     @Test
-    fun `test EmptyCoroutineContext returns no elements`() {
+    fun `test EmptyCoroutineContext returns null elements`() {
         val empty = EmptyCoroutineContext
         assertEquals(null, empty[CoroutineName])
         assertEquals(null, empty[Job])
