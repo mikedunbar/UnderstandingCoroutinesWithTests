@@ -104,7 +104,7 @@ class DispatchersTest {
             launch(newSingleThreadContext("First Launch")) {
                 println("1st launch, delaying for a sec")
                 delay(1000)
-                println("done with 1st launch delay")
+                println("done with 1st launch delay") //FIXME this line never executes
                 continuation?.resume(Unit)
             }
 
@@ -112,10 +112,10 @@ class DispatchersTest {
                 threadName1 = Thread.currentThread().name
                 println("2nd launch, threadName1=$threadName1, suspending coroutine")
                 suspendCoroutine<Unit> {
-                    println("setting continuation to non-null value=$it")
+                    println("setting continuation to non-null value=$it") //FIXME last output seen
                     continuation = it
                 }
-                println("2nd launch, resuming coroutine")
+                println("2nd launch, resuming coroutine") //FIXME never resumed from here
                 threadName2 = Thread.currentThread().name
                 println("threadName2=$threadName2")
                 delay(500)
