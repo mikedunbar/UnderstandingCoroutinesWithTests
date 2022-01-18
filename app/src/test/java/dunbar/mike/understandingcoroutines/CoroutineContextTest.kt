@@ -4,6 +4,7 @@ import kotlinx.coroutines.*
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.util.concurrent.Executors
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.coroutines.coroutineContext
@@ -36,6 +37,15 @@ class CoroutineContextTest {
         }
         assertTrue(handler is CoroutineContext.Element && handler is CoroutineContext)
     }
+
+    //region From a later chapter
+    @Test
+    fun `test Dispatcher implements (some kind of) CoroutineContext interface`() {
+        val customDispatcher = Executors.newFixedThreadPool(10).asCoroutineDispatcher()
+        assertTrue(customDispatcher is CoroutineContext.Element)
+        assertTrue(customDispatcher is CoroutineContext)
+    }
+    //endregion
 
     @Test
     fun `test Job starts in an active state`() {

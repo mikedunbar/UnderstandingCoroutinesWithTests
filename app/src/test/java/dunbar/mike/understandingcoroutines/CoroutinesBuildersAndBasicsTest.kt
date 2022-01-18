@@ -195,7 +195,7 @@ class CoroutinesBuildersAndBasicsTest {
     }
 
     @Test
-    fun `test runBlocking coroutine builder - (parent) waits for child to complete`() {
+    fun `test runBlocking coroutine builder - (parent) waits for children to complete`() {
         val startTime = System.currentTimeMillis()
         runBlocking {
             launch {
@@ -207,30 +207,6 @@ class CoroutinesBuildersAndBasicsTest {
         val elapsedTime = System.currentTimeMillis() - startTime
         assertEquals(listOf("Hello,", "World!"), strings)
         assertTrue(elapsedTime in 1000..1500)
-    }
-
-    @Test
-    fun `test coroutineScope function - provides scope for a suspending function and returns what it's lambda does`() {
-        // comment-out call to coroutineScope, to see error
-        val networkSuspend = suspend {
-            coroutineScope {
-                val first =
-                    async {
-                        delay(500)
-                        5
-                    }
-                val second =
-                    async {
-                        delay(500)
-                        5
-                    }
-                first.await() + second.await()
-            }
-        }
-        val result = runBlocking {
-            networkSuspend()
-        }
-        assertEquals(result, 10)
     }
 }
 

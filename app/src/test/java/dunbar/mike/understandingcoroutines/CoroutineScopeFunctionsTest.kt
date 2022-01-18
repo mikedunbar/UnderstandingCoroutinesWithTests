@@ -29,7 +29,7 @@ class CoroutineScopeFunctionsTest {
         }
 
     @Test
-    fun `test wrapping calls to 2 suspend functions with async GlobalScope is concurrent, but loses relationship with parent coroutine`() =
+    fun `test wrapping calls to 2 suspend functions with GlobalScope - async is concurrent, but loses relationship with parent coroutine`() =
         runBlocking {
             lateinit var part1: Deferred<Int>
             lateinit var part2: Deferred<Int>
@@ -95,6 +95,30 @@ class CoroutineScopeFunctionsTest {
 
     // Using scope functions
     @Test
+    fun `test coroutineScope starts a scope and returns what it's lambda does`() {
+        // comment-out call to coroutineScope, to see error
+        val networkSuspend = suspend {
+            coroutineScope {
+                val first =
+                    async {
+                        delay(500)
+                        5
+                    }
+                val second =
+                    async {
+                        delay(500)
+                        5
+                    }
+                first.await() + second.await()
+            }
+        }
+        val result = runBlocking {
+            networkSuspend()
+        }
+        assertEquals(result, 10)
+    }
+
+    @Test
     fun `test coroutineScope calls it's block arg immediately and suspends the existing coroutine`() =
         runBlocking {
             val startTime = System.currentTimeMillis()
@@ -154,7 +178,7 @@ class CoroutineScopeFunctionsTest {
     }
 
     @Test
-    fun `test coroutineScope cancels all children when parent in cancelled`() {
+    fun `test coroutineScope cancels all children when parent is cancelled`() {
         runBlocking {
             var child1Completed = false
             var child2Completed = false
@@ -235,7 +259,6 @@ class CoroutineScopeFunctionsTest {
                             child2Completed = true
                         }
                         delay(10)
-
                     }
                 } catch (e: Exception) {
                     caughtExceptionMsg = e.message
@@ -266,22 +289,6 @@ class CoroutineScopeFunctionsTest {
     }
 
     @Test
-    fun `test withContext is the same as coroutineScope, but the CoroutineContext is added to the parent scope`() {
-        var child1Name: String? = null
-        var child2Name: String? = null
-        runBlocking(CoroutineName("Parent")) {
-            coroutineScope {
-                child1Name = coroutineContext[CoroutineName]?.name
-            }
-            withContext(CoroutineName("Child")) {
-                child2Name = coroutineContext[CoroutineName]?.name
-            }
-            assertEquals("Parent", child1Name)
-            assertEquals("Child", child2Name)
-        }
-    }
-
-    @Test
     fun `test supervisorScope is the same as coroutineScope, but replaces Job with SupervisorJob`() {
         runBlocking {
             var child2Completed = false
@@ -297,6 +304,22 @@ class CoroutineScopeFunctionsTest {
                 }
             }
             assertEquals(true, child2Completed)
+        }
+    }
+
+    @Test
+    fun `test withContext is the same as coroutineScope, but the CoroutineContext is added to the parent scope`() {
+        var child1Name: String?
+        var child2Name: String?
+        runBlocking(CoroutineName("Parent")) {
+            coroutineScope {
+                child1Name = coroutineContext[CoroutineName]?.name
+            }
+            withContext(CoroutineName("Child")) {
+                child2Name = coroutineContext[CoroutineName]?.name
+            }
+            assertEquals("Parent", child1Name)
+            assertEquals("Child", child2Name)
         }
     }
 
@@ -317,7 +340,7 @@ class CoroutineScopeFunctionsTest {
     }
 
     @Test
-    fun `test withTimeout is the same as coroutineScope, but returns null (instead of throwing) if takes too long`() {
+    fun `test withTimeoutOrNull is the same as coroutineScope, but returns null (instead of throwing) if takes too long`() {
         runBlocking {
             var result: Int? = null
             try {
