@@ -3,6 +3,7 @@ package dunbar.mike.understandingcoroutines
 import kotlinx.coroutines.*
 import org.junit.Assert.*
 import org.junit.Test
+import java.lang.RuntimeException
 import java.util.concurrent.Executors
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.CoroutineContext
@@ -93,38 +94,33 @@ class DispatchersTest {
     }
 
     @Test
-    fun `test Dispatchers-Unconfined never changes threads, but runs on whatever thread it is started or resumed on`() {
-        // best performance, since no thread-switching overhead
-        runBlocking {
-            var continuation: Continuation<Unit>? = null
-            var threadName1 = ""
-            var threadName2 = ""
-            var threadName3 = ""
+    fun `test Dispatchers-Unconfined never changes threads but runs on whatever thread it is started or resumed on`() {
+        // This dispatcher performs best, because of no thread switching
+        var startThreadName = ""
+        var firstResumeThreadName = ""
+        var secondResumeThreadName = ""
 
-            launch(newSingleThreadContext("First Launch")) {
-                println("1st launch, delaying for a sec")
+        runBlocking(newSingleThreadContext("Parent Coroutine Thread")) {
+            var continuation: Continuation<Unit>? = null
+
+            launch(newSingleThreadContext("Sibling Coroutine Thread")) {
                 delay(1000)
-                println("done with 1st launch delay") //FIXME this line never executes
                 continuation?.resume(Unit)
             }
 
             launch(Dispatchers.Unconfined) {
-                threadName1 = Thread.currentThread().name
-                println("2nd launch, threadName1=$threadName1, suspending coroutine")
+                startThreadName = Thread.currentThread().name
                 suspendCoroutine<Unit> {
-                    println("setting continuation to non-null value=$it") //FIXME last output seen
                     continuation = it
                 }
-                println("2nd launch, resuming coroutine") //FIXME never resumed from here
-                threadName2 = Thread.currentThread().name
-                println("threadName2=$threadName2")
+                firstResumeThreadName = Thread.currentThread().name
                 delay(500)
-                threadName3 = Thread.currentThread().name
-                println("threadName3=$threadName3")
+                secondResumeThreadName = Thread.currentThread().name
             }
-            assertEquals("Name1", threadName1)
-            assertEquals("Name2", threadName2)
-            assertEquals("kotlinx.coroutines.DefaultExecutor", threadName3)
         }
+
+        assertTrue(startThreadName.contains("Parent Coroutine Thread"))
+        assertTrue(firstResumeThreadName.contains("Sibling Coroutine Thread"))
+        assertTrue(secondResumeThreadName.contains("DefaultExecutor"))
     }
 }

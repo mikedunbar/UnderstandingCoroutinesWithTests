@@ -2,6 +2,7 @@ package dunbar.mike.understandingcoroutines
 
 import kotlinx.coroutines.*
 import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.*
 import org.junit.Test
 import java.util.*
@@ -11,7 +12,7 @@ class CancellationTest {
     private val ints = Collections.synchronizedList(mutableListOf<Int>())
 
     @Test
-    fun `test cancelled Job ends at first suspension point `() {
+    fun `test cancelled Job ends at first suspension point`() {
         runBlocking {
             val job = launch {
                 repeat(1_000) {
@@ -27,7 +28,7 @@ class CancellationTest {
     }
 
     @Test
-    fun `test cancelling job cancels all of it's children, but not it's parent`() = runBlocking {
+    fun `test cancelling job cancels all of its children, but not it's parent`() = runBlocking {
         val grandParent = Job()
         val parent = Job(grandParent)
         val child1 = launch(parent) {}
@@ -151,7 +152,7 @@ class CancellationTest {
 
     @Test
     fun `test withContext NonCancellable allows suspension even after cancellation`() =
-        runBlockingTest {
+        runTest {
             var caught: CancellationException? = null
             val job = launch {
                 try {
@@ -181,7 +182,7 @@ class CancellationTest {
 
     @Test
     fun `test invokeOnCompletion is another option for cleaning up resources - success example`() =
-        runBlockingTest {
+        runTest {
             val intsBeforeCleanup = mutableListOf<Int>()
             var caught: Throwable? = null
 
@@ -206,7 +207,7 @@ class CancellationTest {
 
     @Test
     fun `test invokeOnCompletion is another option for cleaning up resources - cancelled example`() {
-        runBlockingTest {
+        runTest {
             val intsBeforeCleanup = mutableListOf<Int>()
             var caught: Throwable? = null
 

@@ -54,7 +54,7 @@ class JobTest {
     }
 
     @Test
-    fun `test Jobs can by started lazily`() {
+    fun `test Jobs can by started lazily with start param`() {
         val job = GlobalScope.launch(start = CoroutineStart.LAZY) {}
         assertFalse(job.isActive)
         job.start()
@@ -67,8 +67,8 @@ class JobTest {
     }
 
     @Test
-    fun `test complete moves a Completable Job to Completed state`() {
-        val job: CompletableJob = Job()
+    fun `test complete moves a Job to Completed state`() {
+        val job = Job()
         assertTrue(job.isActive)
         job.complete()
         assertTrue(job.isCompleted)
@@ -87,14 +87,14 @@ class JobTest {
     }
 
     @Test
-    fun `test a parent Job moves to Completed when all it's children complete`() {
+    fun `test parent Job moves to Completed when all it's children complete`() {
         GlobalScope.launch {
             val parentJob = coroutineContext.job
             val child1 = async { delay(1000); 5 }
             val child2 = async { delay(500); 3 }
             assertTrue(parentJob.isActive)
             assertEquals(8, child1.await() + child2.await())
-            assertTrue(parentJob.isCancelled)
+            assertTrue(parentJob.isCompleted)
         }
     }
 
@@ -118,12 +118,12 @@ class JobTest {
     }
 
     @Test
-    fun `test Job, unlike other CoroutineContexts, is NOT passed unchanged from parent to child`() =
+    fun `test Job, unlike other CoroutineContext elements, is NOT passed unchanged from parent to child`() =
         runBlocking(CoroutineName("parent name")) {
             val parentName = coroutineContext[CoroutineName]!!.name
             val parentJob = coroutineContext[Job]
 
-            var childName = "future child name"
+            var childName = ""
             val childJob = launch {
                 childName = coroutineContext[CoroutineName]!!.name
             }
