@@ -1,14 +1,15 @@
 package dunbar.mike.understandingcoroutines
 
 import kotlinx.coroutines.*
+import kotlinx.coroutines.test.setMain
 import org.junit.Assert.*
 import org.junit.Test
-import java.lang.RuntimeException
 import java.util.concurrent.Executors
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
+import kotlin.system.measureTimeMillis
 
 /**
  * Used to decide which thread pool a coroutine runs on.
@@ -94,7 +95,7 @@ class DispatchersTest {
     }
 
     @Test
-    fun `test Dispatchers-Unconfined never changes threads but runs on whatever thread it is started or resumed on`() {
+    fun `test Dispatchers-Unconfined never changes threads but runs on whatever thread it is started or resumed on - Perf optimization`() {
         // This dispatcher performs best, because of no thread switching
         var startThreadName = ""
         var firstResumeThreadName = ""
@@ -122,5 +123,35 @@ class DispatchersTest {
         assertTrue(startThreadName.contains("Parent Coroutine Thread"))
         assertTrue(firstResumeThreadName.contains("Sibling Coroutine Thread"))
         assertTrue(secondResumeThreadName.contains("DefaultExecutor"))
+    }
+
+    @Test
+    @ExperimentalCoroutinesApi
+    fun `test Dispatchers-Main-Immediate dispatches only if not already on Main thread`() {
+        Dispatchers.setMain(Dispatchers.Default)
+        runBlocking(Dispatchers.Main) {
+            // run something on Main without immediate dispatching
+            val withoutImmediateDispatchTime = measureTimeMillis {
+                withContext(Dispatchers.Main) {
+                    delay(100)
+                }
+            }
+
+            // run something on Main WITH immediate dispatch
+            val withImmediateDispatchTime = measureTimeMillis {
+                withContext(Dispatchers.Main.immediate) {
+                    delay(100)
+                }
+
+            }
+            println(
+                "withoutImmediateDispatch=$withoutImmediateDispatchTime" +
+                        ", withImmediateDispatch=$withImmediateDispatchTime"
+            )
+            assertTrue(
+                "coroutine dispatched immediately runs faster",
+                withImmediateDispatchTime < withoutImmediateDispatchTime
+            )
+        }
     }
 }
