@@ -1,53 +1,114 @@
 package dunbar.mike.understandingcoroutines
 
 import kotlinx.coroutines.*
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.util.concurrent.atomic.AtomicInteger
 
 class ProblemWithStateTest {
 
-    data class User(val name: String)
-
-    interface NetworkService {
-        suspend fun fetchUser(id: Int): User
-    }
-
-    class UserFetcher(private val api: NetworkService) {
-        private val users = mutableListOf<User>()
-
-        fun usersFetched() = users.toList()
-
-        suspend fun fetchUser(id: Int) {
-            val newUser = api.fetchUser(id)
-            users.add(newUser)
-            println("user fetched is ${usersFetched().size} after fetching $id")
-        }
-    }
-
-    class FakeNetworkService : NetworkService {
-        override suspend fun fetchUser(id: Int): User {
-            delay(2)
-            return User("User$id")
-        }
-    }
-
-    @DelicateCoroutinesApi
     @Test
-    fun `test shared state issue`() {
-        val fetcher = UserFetcher(FakeNetworkService())
+    fun `test shared state without synchronization won't work`() {
+        var counter = 0
         val runCount = 100_000
-        runBlocking (Dispatchers.IO){
-            coroutineScope {
-                repeat(runCount) { count ->
+        runBlocking {
+            withContext(Dispatchers.Default) {
+                repeat(runCount) {
                     launch {
-                        fetcher.fetchUser(count)
+                        counter++
+                    }
+                }
+
+            }
+        }
+        println("count=$counter")
+        assertTrue(counter < runCount)
+    }
+
+    @Test
+    fun `test shared state with synchronization lock works, but blocks threads and wastes resources`() {
+        var counter = 0
+        val lock = Any()
+        val runCount = 100_000
+        runBlocking {
+            withContext(Dispatchers.Default) {
+                repeat(runCount) {
+                    launch {
+                        synchronized(lock) {
+                            counter++
+                        }
                     }
                 }
             }
         }
-        println("usersAdded: ${fetcher.usersFetched().size}")
-        assertTrue(fetcher.usersFetched().size < runCount)
-
-
+        println("count=$counter")
+        assertEquals(runCount, counter)
     }
+
+    @Test
+    fun `test shared state with an atomic value works, and is more efficient, but only helps with individual operations`() {
+        val counter = AtomicInteger()
+        val runCount = 100_000
+        runBlocking {
+            withContext(Dispatchers.Default) {
+                repeat(runCount) {
+                    launch {
+                        counter.incrementAndGet()
+                    }
+                }
+            }
+        }
+        println("count=$counter")
+        assertEquals(runCount, counter.get())
+    }
+
+    @ExperimentalCoroutinesApi
+    @Test
+    fun `test shared state with Dispatcher-limitParallelism(1) works, but loses multi-threading and is inefficient - so prefer fine-grained to course-grained`() {
+        val singleThreadDispatcher = Dispatchers.IO.limitedParallelism(1)
+        var counter = 0
+        val runCount = 100_000
+        runBlocking {
+            withContext(Dispatchers.Default) {
+                repeat(runCount) {
+                    launch(singleThreadDispatcher) {
+                        // If we were doing more work here, we'd prefer to only wrap the
+                        // increment with the limitedParallelism dispatcher to improve concurrency
+                        counter++
+                    }
+                }
+            }
+        }
+        println("count=$counter")
+        assertEquals(runCount, counter)
+    }
+
+   @Test
+    fun `test shared state with a Mutex works`() {
+        var counter = 0
+        val runCount = 100_000
+        val mutex = Mutex()
+        runBlocking {
+            withContext(Dispatchers.Default) {
+                repeat(runCount) {
+                    launch {
+                        // prefer withLock to manual lock/unlock, since it unlocks in finally
+                        // avoiding deadlock if an exception is thrown
+                        mutex.withLock {
+                            counter++
+                        }
+
+                    }
+                }
+            }
+        }
+        println("count=$counter")
+        assertEquals(runCount, counter)
+    }
+
+
+
 }
