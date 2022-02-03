@@ -8,7 +8,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.util.concurrent.atomic.AtomicInteger
 
-class ProblemWithStateTest {
+class Pt2Ch9TheProblemWithStateTest {
 
     @Test
     fun `test shared state without synchronization won't work`() {

@@ -5,7 +5,7 @@ import org.junit.Assert.*
 import org.junit.Test
 import java.util.*
 
-class ExceptionHandlingTest {
+class Pt2Ch5ExceptionHandlingTest {
     private val ints = Collections.synchronizedList(mutableListOf<Int>())
 
     @Test

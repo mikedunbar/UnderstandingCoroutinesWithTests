@@ -10,7 +10,7 @@ import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.coroutines.coroutineContext
 
 @DelicateCoroutinesApi
-class CoroutineContextTest {
+class Pt2Ch2CoroutineContextTest {
 
     @Test
     fun `test CoroutineName implements CoroutineContext-dot-Element, which implements CoroutineContext`() {

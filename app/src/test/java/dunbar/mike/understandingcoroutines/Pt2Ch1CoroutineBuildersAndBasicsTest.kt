@@ -7,7 +7,7 @@ import org.junit.Test
 import java.util.*
 
 @DelicateCoroutinesApi
-class CoroutinesBuildersAndBasicsTest {
+class Pt2Ch1CoroutineBuildersAndBasicsTest {
 
     private val strings = Collections.synchronizedList(mutableListOf<String>())
 
@@ -35,7 +35,7 @@ class CoroutinesBuildersAndBasicsTest {
     }
 
     @Test
-    fun `test suspending functions can be called from a coroutine`() {
+    fun `test suspending function can be called from a coroutine`() {
         GlobalScope.launch {
             someSuspendingFun()
             println("this is fine")
@@ -43,7 +43,7 @@ class CoroutinesBuildersAndBasicsTest {
     }
 
     @Test
-    fun `test suspending functions can call non-suspending functions`() {
+    fun `test suspending function can call non-suspending functions`() {
         val nonSuspending = {
             5
         }

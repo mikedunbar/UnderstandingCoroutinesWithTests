@@ -21,7 +21,7 @@ import kotlin.coroutines.CoroutineContext
  *
  */
 @DelicateCoroutinesApi
-class JobTest {
+class Pt2Ch3JobTest {
 
     @Test
     fun `test launch returns a Job`() {

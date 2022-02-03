@@ -22,7 +22,7 @@ import kotlin.system.measureTimeMillis
  * Suspending vs Blocking...(need to understand better)
  */
 @DelicateCoroutinesApi
-class DispatchersTest {
+class Pt2Ch7DispatchersTest {
 
     @Test
     fun `test Dispatcher implements CoroutineContext interface`() {

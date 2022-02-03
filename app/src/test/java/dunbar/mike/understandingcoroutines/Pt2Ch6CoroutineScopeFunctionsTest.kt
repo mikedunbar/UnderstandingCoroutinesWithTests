@@ -5,7 +5,7 @@ import org.junit.Assert.*
 import org.junit.Test
 
 @DelicateCoroutinesApi
-class CoroutineScopeFunctionsTest {
+class Pt2Ch6CoroutineScopeFunctionsTest {
 
     private suspend fun networkFetch1(): Int {
         delay(50)
@@ -66,7 +66,8 @@ class CoroutineScopeFunctionsTest {
         val callWithScope = { scope: CoroutineScope,
                               toCall: suspend () -> Int ->
             scope.async {
-                assertEquals("Billy", coroutineContext[CoroutineName]?.name); toCall()
+                assertEquals("Billy", coroutineContext[CoroutineName]?.name)
+                toCall()
             }
         }
 
