@@ -1,9 +1,6 @@
 package dunbar.mike.understandingcoroutines
 
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import kotlin.system.measureTimeMillis
@@ -15,14 +12,10 @@ class Pt2Ch10TestingCoroutinesTest {
     }
 
     private suspend fun parallelizedSvcConsumer(svc: Svc) {
-        val j1 = GlobalScope.launch {
-            svc.doThis()
+        coroutineScope {
+            launch { svc.doThis() }
+            launch { svc.doThat() }
         }
-        val j2 = GlobalScope.launch {
-            svc.doThat()
-        }
-        j1.join()
-        j2.join()
     }
 
     private suspend fun sequentialSvcConsumer(svc: Svc) {
