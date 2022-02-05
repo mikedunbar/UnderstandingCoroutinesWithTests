@@ -9,7 +9,7 @@ class Pt2Ch5ExceptionHandlingTest {
     private val ints = Collections.synchronizedList(mutableListOf<Int>())
 
     @Test
-    fun `test child job exceptions cancel their parent`() = runBlocking {
+    fun `child job exceptions cancel their parent`() = runBlocking {
         // Stop exception propagation at top level, so we can assert things
         supervisorScope {
             val parentJob = launch {
@@ -24,7 +24,7 @@ class Pt2Ch5ExceptionHandlingTest {
     }
 
     @Test
-    fun `test parent job exceptions cancel all their children`() = runBlocking {
+    fun `parent job exceptions cancel all their children`() = runBlocking {
         lateinit var childJob: Job
         lateinit var childJob2: Job
         // Stop exception propagation at top level, so we can assert things
@@ -52,7 +52,7 @@ class Pt2Ch5ExceptionHandlingTest {
     }
 
     @Test
-    fun `test wrapping a coroutine builder with a try-catch doesn't catch`() = runBlocking {
+    fun `wrapping a coroutine builder with a try-catch doesn't catch`() = runBlocking {
         // Stop exception propagation at top level, so we can assert things
         supervisorScope {
             var caught = false
@@ -68,7 +68,7 @@ class Pt2Ch5ExceptionHandlingTest {
     }
 
     @Test
-    fun `test supervisor job ignores exceptions in children`() = runBlocking {
+    fun `supervisor job ignores exceptions in children`() = runBlocking {
         val ints = Collections.synchronizedList(mutableListOf<Int>())
 
         val supervisorJob = SupervisorJob()
@@ -91,7 +91,7 @@ class Pt2Ch5ExceptionHandlingTest {
     }
 
     @Test
-    fun `test supervisorScope function works similarly to launch with SupervisorJob`() =
+    fun `supervisorScope function works similarly to launch with SupervisorJob`() =
         runBlocking {
             val ints = Collections.synchronizedList(mutableListOf<Int>())
 
@@ -117,7 +117,7 @@ class Pt2Ch5ExceptionHandlingTest {
         }
 
     @Test
-    fun `test await propagates exceptions from async`() = runBlocking {
+    fun `await propagates exceptions from async`() = runBlocking {
         supervisorScope {
             val strings = Collections.synchronizedList(mutableListOf<String>())
             var caught = false
@@ -144,7 +144,7 @@ class Pt2Ch5ExceptionHandlingTest {
     }
 
     @Test
-    fun `test CancellationException isn't propagated to parent`() = runBlocking {
+    fun `CancellationException isn't propagated to parent`() = runBlocking {
         val strings = Collections.synchronizedList(mutableListOf<String>())
 
         launch {

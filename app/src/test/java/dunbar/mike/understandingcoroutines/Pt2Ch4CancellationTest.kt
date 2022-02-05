@@ -1,7 +1,6 @@
 package dunbar.mike.understandingcoroutines
 
 import kotlinx.coroutines.*
-import kotlinx.coroutines.test.runBlockingTest
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.*
 import org.junit.Test
@@ -43,18 +42,18 @@ class Pt2Ch4CancellationTest {
     @Test
     fun `test cancelled job cannot be used as a parent`() = runBlocking {
         val parent = Job()
-        val child1 = launch(parent) {
+        launch(parent) {
             delay(100)
             ints.add(1)
         }
         delay(200)
         parent.cancel()
         parent.join()
-        val child2 = launch(parent) {
+        launch(parent) {
             delay(100)
             ints.add(2)
         }
-        val motherlessChild = launch {
+        launch {
             delay(100)
             ints.add(3)
         }
@@ -63,7 +62,7 @@ class Pt2Ch4CancellationTest {
     }
 
     @Test
-    fun `test cancel without join invites race conditions`() = runBlockingTest {
+    fun `test cancel without join invites race conditions`() = runTest {
         val job = launch {
             repeat(100) { count ->
                 delay(10)
@@ -81,7 +80,7 @@ class Pt2Ch4CancellationTest {
     }
 
     @Test
-    fun `test cancelAndJoin extension function works nicely`() = runBlockingTest {
+    fun `test cancelAndJoin extension function works nicely`() = runTest {
         val job = launch {
             repeat(100) { count ->
                 delay(10)
@@ -99,7 +98,7 @@ class Pt2Ch4CancellationTest {
 
     @Test
     fun `test cancellation throws exception, enabling resource cleanup in finally`() =
-        runBlockingTest {
+        runTest {
             var caught: CancellationException? = null
             val job = launch {
                 try {
@@ -122,7 +121,7 @@ class Pt2Ch4CancellationTest {
 
     @Test
     fun `test cancellation puts no time limit on cleanup, but throws exception on suspension `() =
-        runBlockingTest {
+        runTest {
             var caught: CancellationException? = null
             val job = launch {
                 try {
@@ -234,7 +233,7 @@ class Pt2Ch4CancellationTest {
 
     @Test
     fun `test cancellation doesn't happen without a suspension point`() = runBlocking {
-         val job = launch {
+        val job = launch {
             repeat(100) { count ->
                 ints.add(count)
             }

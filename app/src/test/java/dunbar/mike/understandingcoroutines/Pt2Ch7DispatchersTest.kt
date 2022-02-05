@@ -24,8 +24,13 @@ import kotlin.system.measureTimeMillis
 @DelicateCoroutinesApi
 class Pt2Ch7DispatchersTest {
 
+
     @Test
+    @Suppress("ConstantConditionIf")
     fun `test Dispatcher implements CoroutineContext interface`() {
+        if(true)
+            println("hi")
+
         val customDispatcher = Executors.newFixedThreadPool(10).asCoroutineDispatcher()
         assertTrue(customDispatcher is CoroutineContext.Element)
         assertTrue(customDispatcher is CoroutineContext)
