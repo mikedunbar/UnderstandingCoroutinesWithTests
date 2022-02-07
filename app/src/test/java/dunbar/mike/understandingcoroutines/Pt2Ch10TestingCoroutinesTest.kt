@@ -5,7 +5,6 @@ import kotlinx.coroutines.test.*
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.lang.Exception
 import kotlin.system.measureTimeMillis
 
 @ExperimentalCoroutinesApi
@@ -60,7 +59,7 @@ class Pt2Ch10TestingCoroutinesTest {
 
         assertEquals(0, testScheduler.currentTime)
         testScheduler.advanceTimeBy(1000)
-        assertEquals(1000,testScheduler.currentTime)
+        assertEquals(1000, testScheduler.currentTime)
     }
 
     @Test
@@ -79,7 +78,7 @@ class Pt2Ch10TestingCoroutinesTest {
             delay(1000)
         }
         testDispatcher.scheduler.advanceUntilIdle()
-        assertEquals(2000,testDispatcher.scheduler.currentTime)
+        assertEquals(2000, testDispatcher.scheduler.currentTime)
         assertEquals("stop", a)
     }
 
@@ -149,6 +148,68 @@ class Pt2Ch10TestingCoroutinesTest {
         }
         scope.advanceTimeBy(10)
         assertTrue(completed)
-        assertEquals(10,scope.currentTime)
+        assertEquals(10, scope.currentTime)
+    }
+
+    @Test
+    fun `runTest start a coroutine with TestScope and advances until idle`() = runTest {
+        assertEquals(0, currentTime)
+        delay(1000)
+        assertEquals(1000, currentTime)
+    }
+
+    @Test
+    fun `CompletableDeferred wraps Deferred with a complete method, which causes awaiting coroutines to resume`() =
+        runTest {
+            val deferredString = CompletableDeferred<String>()
+            var result = "wrong"
+            val job = launch {
+                result = deferredString.await()
+            }
+            delay(1000)
+            deferredString.complete("right")
+            job.join()
+            assertEquals("right", result)
+            assertEquals(1000, currentTime)
+        }
+
+    interface Repo {
+        suspend fun getName(): String
+        suspend fun getAge(): Int
+    }
+
+    class FakeRepo : Repo {
+        val deferredName = CompletableDeferred<String>()
+        val deferredAge = CompletableDeferred<Int>()
+
+        override suspend fun getName() = deferredName.await()
+        override suspend fun getAge() = deferredAge.await()
+    }
+
+    class MySvc(private val repo: Repo) {
+        suspend fun getGreeting() : String {
+            return coroutineScope {
+                val name = async { repo.getName() }
+                val age = async { repo.getAge() }
+                "Hello ${age.await()}yr old ${name.await()}"
+            }
+        }
+    }
+
+    @Test
+    fun `CompletableDeferred let's use move fake test delay from fakes to tests`() = runTest {
+        val fakeRepo = FakeRepo()
+        val svc = MySvc(fakeRepo)
+
+        launch {
+            delay(2000)
+            fakeRepo.deferredName.complete("Mike")
+        }
+        launch {
+            delay(1500)
+            fakeRepo.deferredAge.complete(10)
+        }
+        assertEquals("Hello 10yr old Mike", svc.getGreeting())
+        assertEquals(2000, currentTime)
     }
 }
