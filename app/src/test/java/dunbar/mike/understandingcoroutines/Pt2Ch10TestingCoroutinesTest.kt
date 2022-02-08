@@ -5,6 +5,7 @@ import kotlinx.coroutines.test.*
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import kotlin.coroutines.ContinuationInterceptor
 import kotlin.system.measureTimeMillis
 
 @ExperimentalCoroutinesApi
@@ -187,7 +188,7 @@ class Pt2Ch10TestingCoroutinesTest {
     }
 
     class MySvc(private val repo: Repo) {
-        suspend fun getGreeting() : String {
+        suspend fun getGreeting(): String {
             return coroutineScope {
                 val name = async { repo.getName() }
                 val age = async { repo.getAge() }
@@ -211,5 +212,48 @@ class Pt2Ch10TestingCoroutinesTest {
         }
         assertEquals("Hello 10yr old Mike", svc.getGreeting())
         assertEquals(2000, currentTime)
+    }
+
+    interface CustReader {
+        suspend fun read()
+    }
+
+    class FakeCustReader : CustReader {
+        var threadName: String? = null
+
+        override suspend fun read() {
+            threadName = Thread.currentThread().name
+        }
+    }
+    val myFakeCustReader = FakeCustReader()
+
+    @Test
+    fun ` to test dispatcher switching, capture thread names in a mock or fake`() {
+        val codeToTest: suspend (CustReader) -> Unit = { reader: CustReader ->
+            withContext(Dispatchers.IO) {
+                reader.read()
+            }
+        }
+        runTest {
+            codeToTest.invoke(myFakeCustReader)
+            assert(myFakeCustReader.threadName!!.startsWith("DefaultDispatcher-worker-"))
+        }
+    }
+
+    @Test
+    fun `to stay on virtual time and test timing dependencies, inject StandardTestDispatcher`() {
+        val codeToTest: suspend (CustReader, CoroutineDispatcher) -> Unit =
+            { reader: CustReader, dispatcher: CoroutineDispatcher ->
+                withContext(dispatcher) {
+                    delay(500)
+                    reader.read()
+                }
+            }
+
+        runTest {
+            val testDispatcher = this.coroutineContext[ContinuationInterceptor] as CoroutineDispatcher
+            codeToTest.invoke(myFakeCustReader, testDispatcher)
+            assertTrue(currentTime in 500..799)
+        }
     }
 }
