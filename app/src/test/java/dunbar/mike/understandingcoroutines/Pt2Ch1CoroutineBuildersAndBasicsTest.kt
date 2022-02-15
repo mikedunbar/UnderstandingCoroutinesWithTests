@@ -17,7 +17,7 @@ class Pt2Ch1CoroutineBuildersAndBasicsTest {
     }
 
     @Test
-    fun `test suspending function cannot be called from a non-suspending function`() {
+    fun `suspending function cannot be called from a non-suspending function`() {
         val illegalLambda = {
             //someSuspendingFun() // uncomment to see error
             println("this bad")
@@ -26,7 +26,7 @@ class Pt2Ch1CoroutineBuildersAndBasicsTest {
     }
 
     @Test
-    fun `test suspending function can be called from another suspending function`() {
+    fun `suspending function can be called from another suspending function`() {
         val legalLambda = suspend {
             someSuspendingFun()
             println("this is fine")
@@ -35,7 +35,7 @@ class Pt2Ch1CoroutineBuildersAndBasicsTest {
     }
 
     @Test
-    fun `test suspending function can be called from a coroutine`() {
+    fun `suspending function can be called from a coroutine`() {
         GlobalScope.launch {
             someSuspendingFun()
             println("this is fine")
@@ -43,7 +43,7 @@ class Pt2Ch1CoroutineBuildersAndBasicsTest {
     }
 
     @Test
-    fun `test suspending function can call non-suspending functions`() {
+    fun `suspending function can call non-suspending functions`() {
         val nonSuspending = {
             5
         }
@@ -59,7 +59,7 @@ class Pt2Ch1CoroutineBuildersAndBasicsTest {
     }
 
     @Test
-    fun `test launch coroutine builder requires a scope`() {
+    fun `launch coroutine builder requires a scope`() {
         GlobalScope. // comment out this line, to see error
         launch {
             println("I need a scope")
@@ -68,7 +68,7 @@ class Pt2Ch1CoroutineBuildersAndBasicsTest {
 
     @ExperimentalCoroutinesApi
     @Test
-    fun `test async coroutine builder requires a scope`() {
+    fun `async coroutine builder requires a scope`() {
         GlobalScope. // comment out this line, to see error
         async {
             5
@@ -79,7 +79,7 @@ class Pt2Ch1CoroutineBuildersAndBasicsTest {
     }
 
     @Test
-    fun `test runBlocking coroutine builder DOES NOT require a scope`() {
+    fun `runBlocking coroutine builder DOES NOT require a scope`() {
         val gotten = runBlocking {
             5
         }
@@ -87,7 +87,7 @@ class Pt2Ch1CoroutineBuildersAndBasicsTest {
     }
 
     @Test
-    fun `test launch coroutine builder - delays do not block thread, sleep required to do so`() {
+    fun `launch coroutine builder - delays do not block thread, sleep required to do so`() {
         GlobalScope.launch {
             delay(1000)
             strings.add("World!")
@@ -106,7 +106,7 @@ class Pt2Ch1CoroutineBuildersAndBasicsTest {
     }
 
     @Test
-    fun `test runBlocking coroutine builder - delays DO block thread`() {
+    fun `runBlocking coroutine builder - delays DO block thread`() {
         val startTime = System.currentTimeMillis()
         runBlocking {
             delay(1000)
@@ -128,7 +128,7 @@ class Pt2Ch1CoroutineBuildersAndBasicsTest {
     }
 
     @Test
-    fun `test runBlocking (top-level) coroutine builder - delays DO block thread`() = runBlocking {
+    fun `runBlocking (top-level) coroutine builder - delays DO block thread`() = runBlocking {
         val startTime = System.currentTimeMillis()
         launch {
             delay(1000)
@@ -150,7 +150,7 @@ class Pt2Ch1CoroutineBuildersAndBasicsTest {
     }
 
     @Test
-    fun `test async coroutine builder - DeferredResult's await method suspends until value ready`() =
+    fun `async coroutine builder - DeferredResult's await method suspends until value ready`() =
         runBlocking {
             val startTime = System.currentTimeMillis()
             val resultDeferred: Deferred<Int> = async {
@@ -164,7 +164,7 @@ class Pt2Ch1CoroutineBuildersAndBasicsTest {
         }
 
     @Test
-    fun `test async coroutine builder - multiple can be used for parallelization`() = runBlocking {
+    fun `async coroutine builder - multiple can be used for parallelization`() = runBlocking {
         val startTime = System.currentTimeMillis()
         val result1 = async {
             delay(1000)
@@ -195,7 +195,7 @@ class Pt2Ch1CoroutineBuildersAndBasicsTest {
     }
 
     @Test
-    fun `test runBlocking coroutine builder - (parent) waits for children to complete`() {
+    fun `runBlocking coroutine builder - (parent) waits for children to complete`() {
         val startTime = System.currentTimeMillis()
         runBlocking {
             launch {

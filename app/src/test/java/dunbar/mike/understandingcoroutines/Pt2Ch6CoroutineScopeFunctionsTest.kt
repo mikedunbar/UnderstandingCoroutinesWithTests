@@ -19,7 +19,7 @@ class Pt2Ch6CoroutineScopeFunctionsTest {
 
     // Without using scope functions
     @Test
-    fun `test calling 2 suspend functions is sequential, not concurrent`() =
+    fun `calling 2 suspend functions is sequential, not concurrent`() =
         runBlocking {
             val startTime = System.currentTimeMillis()
             val sum = networkFetch1() + networkFetch2()
@@ -29,7 +29,7 @@ class Pt2Ch6CoroutineScopeFunctionsTest {
         }
 
     @Test
-    fun `test wrapping calls to 2 suspend functions with GlobalScope - async is concurrent, but loses relationship with parent coroutine`() =
+    fun `wrapping calls to 2 suspend functions with GlobalScope - async is concurrent, but loses relationship with parent coroutine`() =
         runBlocking {
             lateinit var part1: Deferred<Int>
             lateinit var part2: Deferred<Int>
@@ -62,7 +62,7 @@ class Pt2Ch6CoroutineScopeFunctionsTest {
         }
 
     @Test
-    fun `test passing scope to async is concurrent and has relationship to parent, but an exception anywhere breaks entire scope`() {
+    fun `passing scope to async is concurrent and has relationship to parent, but an exception anywhere breaks entire scope`() {
         val callWithScope = { scope: CoroutineScope,
                               toCall: suspend () -> Int ->
             scope.async {
@@ -96,7 +96,7 @@ class Pt2Ch6CoroutineScopeFunctionsTest {
 
     // Using scope functions
     @Test
-    fun `test coroutineScope starts a scope and returns what it's lambda does`() {
+    fun `coroutineScope starts a scope and returns what it's lambda does`() {
         // comment-out call to coroutineScope, to see error
         val networkSuspend = suspend {
             coroutineScope {
@@ -120,7 +120,7 @@ class Pt2Ch6CoroutineScopeFunctionsTest {
     }
 
     @Test
-    fun `test coroutineScope calls it's block arg immediately and suspends the existing coroutine`() =
+    fun `coroutineScope calls it's block arg immediately and suspends the existing coroutine`() =
         runBlocking {
             val startTime = System.currentTimeMillis()
             val a = coroutineScope {
@@ -137,7 +137,7 @@ class Pt2Ch6CoroutineScopeFunctionsTest {
         }
 
     @Test
-    fun `test coroutineScope inherits CoroutineContext from parent, but overrides Job`() =
+    fun `coroutineScope inherits CoroutineContext from parent, but overrides Job`() =
         runBlocking(CoroutineName("Parent")) {
             val parentName = coroutineContext[CoroutineName]?.name
             val parentJob = coroutineContext[Job]
@@ -152,7 +152,7 @@ class Pt2Ch6CoroutineScopeFunctionsTest {
         }
 
     @Test
-    fun `test coroutineScope waits for all children to complete before completing itself`() {
+    fun `coroutineScope waits for all children to complete before completing itself`() {
         runBlocking {
             var parentJob: Job?
             coroutineScope {
@@ -179,7 +179,7 @@ class Pt2Ch6CoroutineScopeFunctionsTest {
     }
 
     @Test
-    fun `test coroutineScope cancels all children when parent is cancelled`() {
+    fun `coroutineScope cancels all children when parent is cancelled`() {
         runBlocking {
             var child1Completed = false
             var child2Completed = false
@@ -207,7 +207,7 @@ class Pt2Ch6CoroutineScopeFunctionsTest {
     }
 
     @Test
-    fun `test coroutineScope exception cancels all children and rethrows`() {
+    fun `coroutineScope exception cancels all children and rethrows`() {
         runBlocking {
             var child1Completed = false
             var child2Completed = false
@@ -242,7 +242,7 @@ class Pt2Ch6CoroutineScopeFunctionsTest {
     }
 
     @Test
-    fun `test coroutineScope exception in a child cancels all children and rethrows`() {
+    fun `coroutineScope exception in a child cancels all children and rethrows`() {
         runBlocking {
             var child2Completed = false
             var child1Job: Job? = null
@@ -280,7 +280,7 @@ class Pt2Ch6CoroutineScopeFunctionsTest {
     }
 
     @Test
-    fun `test coroutineScope is great for multiple async calls in a suspend function`() {
+    fun `coroutineScope is great for multiple async calls in a suspend function`() {
         runBlocking {
             val startTime = System.currentTimeMillis()
             assertEquals(10, doMultipleAsyncCalls())
@@ -290,7 +290,7 @@ class Pt2Ch6CoroutineScopeFunctionsTest {
     }
 
     @Test
-    fun `test supervisorScope is the same as coroutineScope, but replaces Job with SupervisorJob`() {
+    fun `supervisorScope is the same as coroutineScope, but replaces Job with SupervisorJob`() {
         runBlocking {
             var child2Completed = false
             supervisorScope {
@@ -309,7 +309,7 @@ class Pt2Ch6CoroutineScopeFunctionsTest {
     }
 
     @Test
-    fun `test withContext is the same as coroutineScope, but the CoroutineContext is added to the parent scope`() {
+    fun `withContext is the same as coroutineScope, but the CoroutineContext is added to the parent scope`() {
         var child1Name: String?
         var child2Name: String?
         runBlocking(CoroutineName("Parent")) {
@@ -325,7 +325,7 @@ class Pt2Ch6CoroutineScopeFunctionsTest {
     }
 
     @Test
-    fun `test withTimeout is the same as coroutineScope, but throws if takes too long`() {
+    fun `withTimeout is the same as coroutineScope, but throws if takes too long`() {
         runBlocking {
             var caught = Exception("wrong one")
             try {
@@ -341,7 +341,7 @@ class Pt2Ch6CoroutineScopeFunctionsTest {
     }
 
     @Test
-    fun `test withTimeoutOrNull is the same as coroutineScope, but returns null (instead of throwing) if takes too long`() {
+    fun `withTimeoutOrNull is the same as coroutineScope, but returns null (instead of throwing) if takes too long`() {
         runBlocking {
             var result: Int? = null
             try {

@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicInteger
 class Pt2Ch9TheProblemWithStateTest {
 
     @Test
-    fun `test shared state without synchronization won't work`() {
+    fun `shared state without synchronization won't work`() {
         var counter = 0
         val runCount = 100_000
         runBlocking {
@@ -29,7 +29,7 @@ class Pt2Ch9TheProblemWithStateTest {
     }
 
     @Test
-    fun `test shared state with synchronization lock works, but blocks threads and wastes resources`() {
+    fun `shared state with synchronization lock works, but blocks threads and wastes resources`() {
         var counter = 0
         val lock = Any()
         val runCount = 100_000
@@ -49,7 +49,7 @@ class Pt2Ch9TheProblemWithStateTest {
     }
 
     @Test
-    fun `test shared state with an atomic value works, and is more efficient, but only helps with individual operations`() {
+    fun `shared state with an atomic value works, and is more efficient, but only helps with individual operations`() {
         val counter = AtomicInteger()
         val runCount = 100_000
         runBlocking {
@@ -67,7 +67,7 @@ class Pt2Ch9TheProblemWithStateTest {
 
     @ExperimentalCoroutinesApi
     @Test
-    fun `test shared state with Dispatcher-limitParallelism(1) works, but loses multi-threading and is inefficient - so prefer fine-grained to course-grained`() {
+    fun `shared state with Dispatcher-limitParallelism(1) works, but loses multi-threading and is inefficient - so prefer fine-grained to course-grained`() {
         val singleThreadDispatcher = Dispatchers.IO.limitedParallelism(1)
         var counter = 0
         val runCount = 100_000
@@ -87,7 +87,7 @@ class Pt2Ch9TheProblemWithStateTest {
     }
 
    @Test
-    fun `test shared state with a Mutex works`() {
+    fun `shared state with a Mutex works`() {
         var counter = 0
         val runCount = 100_000
         val mutex = Mutex()

@@ -11,7 +11,7 @@ class Pt2Ch4CancellationTest {
     private val ints = Collections.synchronizedList(mutableListOf<Int>())
 
     @Test
-    fun `test cancelled Job ends at first suspension point`() {
+    fun `cancelled Job ends at first suspension point`() {
         runBlocking {
             val job = launch {
                 repeat(1_000) {
@@ -27,7 +27,7 @@ class Pt2Ch4CancellationTest {
     }
 
     @Test
-    fun `test cancelling job cancels all of its children, but not it's parent`() = runBlocking {
+    fun `cancelling job cancels all of its children, but not it's parent`() = runBlocking {
         val grandParent = Job()
         val parent = Job(grandParent)
         val child1 = launch(parent) {}
@@ -40,7 +40,7 @@ class Pt2Ch4CancellationTest {
     }
 
     @Test
-    fun `test cancelled job cannot be used as a parent`() = runBlocking {
+    fun `cancelled job cannot be used as a parent`() = runBlocking {
         val parent = Job()
         launch(parent) {
             delay(100)
@@ -62,7 +62,7 @@ class Pt2Ch4CancellationTest {
     }
 
     @Test
-    fun `test cancel without join invites race conditions`() = runTest {
+    fun `cancel without join invites race conditions`() = runTest {
         val job = launch {
             repeat(100) { count ->
                 delay(10)
@@ -80,7 +80,7 @@ class Pt2Ch4CancellationTest {
     }
 
     @Test
-    fun `test cancelAndJoin extension function works nicely`() = runTest {
+    fun `cancelAndJoin extension function works nicely`() = runTest{
         val job = launch {
             repeat(100) { count ->
                 delay(10)
@@ -97,7 +97,7 @@ class Pt2Ch4CancellationTest {
     }
 
     @Test
-    fun `test cancellation throws exception, enabling resource cleanup in finally`() =
+    fun `cancellation throws exception, enabling resource cleanup in finally`() =
         runTest {
             var caught: CancellationException? = null
             val job = launch {
@@ -120,7 +120,7 @@ class Pt2Ch4CancellationTest {
         }
 
     @Test
-    fun `test cancellation puts no time limit on cleanup, but throws exception on suspension `() =
+    fun `cancellation puts no time limit on cleanup, but throws exception on suspension `() =
         runTest {
             var caught: CancellationException? = null
             val job = launch {
@@ -150,7 +150,7 @@ class Pt2Ch4CancellationTest {
         }
 
     @Test
-    fun `test withContext NonCancellable allows suspension even after cancellation`() =
+    fun `withContext NonCancellable allows suspension even after cancellation`() =
         runTest {
             var caught: CancellationException? = null
             val job = launch {
@@ -180,7 +180,7 @@ class Pt2Ch4CancellationTest {
         }
 
     @Test
-    fun `test invokeOnCompletion is another option for cleaning up resources - success example`() =
+    fun `invokeOnCompletion is another option for cleaning up resources - success example`() =
         runTest {
             val intsBeforeCleanup = mutableListOf<Int>()
             var caught: Throwable? = null
@@ -205,7 +205,7 @@ class Pt2Ch4CancellationTest {
         }
 
     @Test
-    fun `test invokeOnCompletion is another option for cleaning up resources - cancelled example`() {
+    fun `invokeOnCompletion is another option for cleaning up resources - cancelled example`() {
         runTest {
             val intsBeforeCleanup = mutableListOf<Int>()
             var caught: Throwable? = null
@@ -232,7 +232,7 @@ class Pt2Ch4CancellationTest {
     }
 
     @Test
-    fun `test cancellation doesn't happen without a suspension point`() = runBlocking {
+    fun `cancellation doesn't happen without a suspension point`() = runBlocking {
         val job = launch {
             repeat(100) { count ->
                 ints.add(count)
@@ -244,7 +244,7 @@ class Pt2Ch4CancellationTest {
     }
 
     @Test
-    fun `test cancellation doesn't happen without a suspension point, and yield suspends`() =
+    fun `cancellation doesn't happen without a suspension point, and yield suspends`() =
         runBlocking {
             val job = launch {
                 repeat(100) { count ->
@@ -262,7 +262,7 @@ class Pt2Ch4CancellationTest {
     // Can't get the below 2 to work, try later
 
 //    @Test
-//    fun `test cancellation works with ensureActive`() =
+//    fun `cancellation works with ensureActive`() =
 //        runBlocking {
 //            val ints = Collections.synchronizedList(mutableListOf<Int>())
 //            val job = Job()
@@ -279,7 +279,7 @@ class Pt2Ch4CancellationTest {
 //        }
 //
 //    @Test
-//    fun `test cancellation doesn't happen without a suspension point, unless you check job state `() {
+//    fun `cancellation doesn't happen without a suspension point, unless you check job state `() {
 //        val ints = Collections.synchronizedList(mutableListOf<Int>())
 //        GlobalScope.launch {
 //            val job = launch {

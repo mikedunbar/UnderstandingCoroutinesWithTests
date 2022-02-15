@@ -24,19 +24,19 @@ import kotlin.coroutines.CoroutineContext
 class Pt2Ch3JobTest {
 
     @Test
-    fun `test launch returns a Job`() {
+    fun `Coroutines are represented by Jobs, launch returns a Job`() {
         assertTrue(GlobalScope.launch { } is Job)
     }
 
     @Test
-    fun `test async returns Deferred which implements Job`() {
+    fun `async returns Deferred which implements Job`() {
         val deferredJob = GlobalScope.async {}
         assertTrue(deferredJob is Job)
         assertTrue(deferredJob is Deferred)
     }
 
     @Test
-    fun `test Jobs start active by default`() {
+    fun `Jobs start active by default`() {
         val job = Job()
         assertTrue(job.isActive)
 
@@ -54,7 +54,7 @@ class Pt2Ch3JobTest {
     }
 
     @Test
-    fun `test Jobs can by started lazily with start param`() {
+    fun `Jobs can by started lazily with start param`() {
         val job = GlobalScope.launch(start = CoroutineStart.LAZY) {}
         assertFalse(job.isActive)
         job.start()
@@ -67,7 +67,7 @@ class Pt2Ch3JobTest {
     }
 
     @Test
-    fun `test complete moves a Job to Completed state`() {
+    fun `complete moves a Job to Completed state`() {
         val job = Job()
         assertTrue(job.isActive)
         job.complete()
@@ -78,7 +78,7 @@ class Pt2Ch3JobTest {
 
 
     @Test
-    fun `test cancel moves a Job to Cancelled state`() {
+    fun `cancel moves a Job to Cancelled state`() {
         val job = Job()
         job.cancel("you're done")
         assertTrue(job.isCancelled)
@@ -87,7 +87,7 @@ class Pt2Ch3JobTest {
     }
 
     @Test
-    fun `test parent Job moves to Completed when all it's children complete`() {
+    fun `parent Job moves to Completed when all it's children complete`() {
         GlobalScope.launch {
             val parentJob = coroutineContext.job
             val child1 = async { delay(1000); 5 }
@@ -99,7 +99,7 @@ class Pt2Ch3JobTest {
     }
 
     @Test
-    fun `test Jobs implement CoroutineContext and can be access from there`() {
+    fun `Job implement CoroutineContext and can be access from there`() {
         GlobalScope.launch {
             val job: Job? = coroutineContext[Job]
             assertNotNull(job)
@@ -109,7 +109,7 @@ class Pt2Ch3JobTest {
     }
 
     @Test
-    fun `test Jobs can be access from CoroutineContext job extension function`() {
+    fun `Job can be access from CoroutineContext job extension function`() {
         GlobalScope.launch {
             val job: Job = coroutineContext.job
             assertNotNull(job)
@@ -118,7 +118,7 @@ class Pt2Ch3JobTest {
     }
 
     @Test
-    fun `test Job, unlike other CoroutineContext elements, is NOT passed unchanged from parent to child`() =
+    fun `Job, unlike other CoroutineContext elements, is NOT passed unchanged from parent to child`() =
         runBlocking(CoroutineName("parent name")) {
             val parentName = coroutineContext[CoroutineName]!!.name
             val parentJob = coroutineContext[Job]
@@ -134,7 +134,7 @@ class Pt2Ch3JobTest {
         }
 
     @Test
-    fun `test parent job provides access to child jobs`() {
+    fun `parent job provides access to child jobs`() {
         runBlocking {
             val parentJob = coroutineContext.job
 
@@ -146,7 +146,7 @@ class Pt2Ch3JobTest {
     }
 
     @Test
-    fun `test join waits for job to complete or cancel`() {
+    fun `join waits for job to complete or cancel`() {
         val startTime = System.currentTimeMillis()
         runBlocking {
             val childJob = launch {
@@ -158,13 +158,13 @@ class Pt2Ch3JobTest {
     }
 
     @Test
-    fun `test factory function fake constructor returns a CompletableJob`() {
+    fun `factory function fake constructor returns a CompletableJob`() {
         val job = Job()
         assertTrue(job is CompletableJob)
     }
 
     @Test
-    fun `test joining on a CompletableJob never completes, unless complete or completeExceptionally are called`() {
+    fun `joining on a CompletableJob never completes, unless complete or completeExceptionally are called`() {
         runBlocking {
             val job = Job()
             launch(job) {}
@@ -175,7 +175,7 @@ class Pt2Ch3JobTest {
     }
 
     @Test
-    fun `test join can be used to wait for all children of a parent to complete `() {
+    fun `join can be used to wait for all children of a parent to complete `() {
         val startTime = System.currentTimeMillis()
         runBlocking {
             val job = Job()
@@ -187,7 +187,7 @@ class Pt2Ch3JobTest {
     }
 
     @Test
-    fun `test CompletableJob-dot-complete waits for children to complete`() {
+    fun `CompletableJob-dot-complete waits for children to complete`() {
         val startTime = System.currentTimeMillis()
         runBlocking {
             val job = Job()
@@ -200,7 +200,7 @@ class Pt2Ch3JobTest {
     }
 
     @Test
-    fun `test CompletableJob-dot-completeExceptionally does NOT wait for children to complete`() {
+    fun `CompletableJob-dot-completeExceptionally does NOT wait for children to complete`() {
         val startTime = System.currentTimeMillis()
         runBlocking {
             val job = Job()
@@ -214,7 +214,7 @@ class Pt2Ch3JobTest {
     }
 
     @Test
-    fun `test Job factory function accepts a parent, where structured concurrency applies`() {
+    fun `Job factory function accepts a parent, where structured concurrency applies`() {
         val startTime = System.currentTimeMillis()
         runBlocking {
             val parentJob = Job()

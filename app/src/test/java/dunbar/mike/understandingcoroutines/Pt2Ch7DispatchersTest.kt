@@ -27,7 +27,7 @@ class Pt2Ch7DispatchersTest {
 
     @Test
     @Suppress("ConstantConditionIf")
-    fun `test Dispatcher implements CoroutineContext interface`() {
+    fun `Dispatcher implements CoroutineContext interface`() {
         if(true)
             println("hi")
 
@@ -37,7 +37,7 @@ class Pt2Ch7DispatchersTest {
     }
 
     @Test
-    fun `test Dispatchers-Default is chosen if no dispatcher set`() {
+    fun `Dispatchers-Default is chosen if no dispatcher set`() {
         GlobalScope.launch {
             val threadName = Thread.currentThread().name
             print("threadName=$threadName")
@@ -46,7 +46,7 @@ class Pt2Ch7DispatchersTest {
     }
 
     @Test
-    fun `test runBlocking sets something other than Dispatchers-Default`() {
+    fun `runBlocking sets something other than Dispatchers-Default`() {
         runBlocking {
             val threadName = Thread.currentThread().name
             print("threadName=$threadName")
@@ -55,7 +55,7 @@ class Pt2Ch7DispatchersTest {
     }
 
     @Test
-    fun `test Dispatchers-IO shares threads with Dispatchers-Default`() {
+    fun `Dispatchers-IO shares threads with Dispatchers-Default`() {
         runBlocking {
             var defaultDispatcherThread: String
             var iODispatcherThread: String
@@ -72,7 +72,7 @@ class Pt2Ch7DispatchersTest {
     // Custom dispatchers are useful with code expected to block threads a lot,
     // to limit impact on other areas of the application.
     @Test
-    fun `test custom dispatcher with it's own thread pool can be defined`() {
+    fun `custom dispatcher with it's own thread pool can be defined`() {
         val numThreads = 20
         val customDispatcher = Executors.newFixedThreadPool(numThreads).asCoroutineDispatcher()
         var count = 0
@@ -89,7 +89,7 @@ class Pt2Ch7DispatchersTest {
 
     @ExperimentalCoroutinesApi
     @Test
-    fun `test Dispatcher-limitedParallelism is a better way to limit number of coroutines ran at once`() {
+    fun `Dispatcher-limitedParallelism is a better way to limit number of coroutines ran at once`() {
         runBlocking {
             val dispatcher = Dispatchers.IO.limitedParallelism(2)
 
@@ -100,7 +100,7 @@ class Pt2Ch7DispatchersTest {
     }
 
     @Test
-    fun `test Dispatchers-Unconfined never changes threads but runs on whatever thread it is started or resumed on - Perf optimization`() {
+    fun `Dispatchers-Unconfined never changes threads but runs on whatever thread it is started or resumed on - Perf optimization`() {
         // This dispatcher performs best, because of no thread switching
         var startThreadName = ""
         var firstResumeThreadName = ""
@@ -132,7 +132,7 @@ class Pt2Ch7DispatchersTest {
 
     @Test
     @ExperimentalCoroutinesApi
-    fun `test Dispatchers-Main-Immediate dispatches only if not already on Main thread`() {
+    fun `Dispatchers-Main-Immediate dispatches only if not already on Main thread`() {
         Dispatchers.setMain(Dispatchers.Default)
         runBlocking(Dispatchers.Main) {
             // run something on Main without immediate dispatching

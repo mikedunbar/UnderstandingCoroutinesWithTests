@@ -1,37 +1,40 @@
 package dunbar.mike.understandingcoroutines
 
 import kotlinx.coroutines.*
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
+import kotlinx.coroutines.test.setMain
+import org.junit.Assert.*
+import org.junit.BeforeClass
 import org.junit.Test
 import java.util.concurrent.Executors
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.coroutines.coroutineContext
 
+@ExperimentalCoroutinesApi
 @DelicateCoroutinesApi
-class Pt2Ch2CoroutineContextTest {
+@ExperimentalStdlibApi
+class Pt2Ch2CoroutineContextAndScopeTest {
 
     @Test
-    fun `test CoroutineName implements CoroutineContext-dot-Element, which implements CoroutineContext`() {
+    fun `CoroutineName implements CoroutineContext-dot-Element, which implements CoroutineContext`() {
         val name = CoroutineName("A name")
         assertTrue(name is CoroutineContext.Element && name is CoroutineContext)
     }
 
     @Test
-    fun `test Job implements CoroutineContext-dot-Element, which implements CoroutineContext`() {
+    fun `Job implements CoroutineContext-dot-Element, which implements CoroutineContext`() {
         val job = Job()
         assertTrue(job is CoroutineContext.Element && job is CoroutineContext)
     }
 
     @Test
-    fun `test SupervisorJob implements CoroutineContext-dot-Element, which implements CoroutineContext`() {
+    fun `SupervisorJob implements CoroutineContext-dot-Element, which implements CoroutineContext`() {
         val bigBossMan = SupervisorJob()
         assertTrue(bigBossMan is CoroutineContext.Element && bigBossMan is CoroutineContext)
     }
 
     @Test
-    fun `test CoroutineExceptionHandler implements CoroutineContext-dot-Element, which implements CoroutineContext`() {
+    fun `CoroutineExceptionHandler implements CoroutineContext-dot-Element, which implements CoroutineContext`() {
         val handler = CoroutineExceptionHandler { _, _ ->
 
         }
@@ -40,7 +43,7 @@ class Pt2Ch2CoroutineContextTest {
 
     //region From a later chapter
     @Test
-    fun `test Dispatcher implements (some kind of) CoroutineContext interface`() {
+    fun `Dispatcher implements (some kind of) CoroutineContext interface`() {
         val customDispatcher = Executors.newFixedThreadPool(10).asCoroutineDispatcher()
         assertTrue(customDispatcher is CoroutineContext.Element)
         assertTrue(customDispatcher is CoroutineContext)
@@ -48,19 +51,13 @@ class Pt2Ch2CoroutineContextTest {
     //endregion
 
     @Test
-    fun `test Job starts in an active state`() {
-        val job = Job()
-        assertTrue(job.isActive)
-    }
-
-    @Test
-    fun `test elements can be found in CoroutineContext using companion object key (shortcut) and get operator`() {
+    fun `elements can be found in CoroutineContext using companion object key as index`() {
         val ctx: CoroutineContext = CoroutineName("Name")
         assertEquals("Name", ctx[CoroutineName]?.name)
     }
 
     @Test
-    fun `test adding an elements with a different key to an existing context works`() {
+    fun `contexts can be added together, and the result contains all elements from both`() {
         val ctx1 = CoroutineName("Name")
         val ctx2 = Job()
         val ctx3 = ctx1 + ctx2
@@ -69,7 +66,7 @@ class Pt2Ch2CoroutineContextTest {
     }
 
     @Test
-    fun `test EmptyCoroutineContext returns null elements`() {
+    fun `EmptyCoroutineContext returns null elements`() {
         val empty = EmptyCoroutineContext
         assertEquals(null, empty[CoroutineName])
         assertEquals(null, empty[Job])
@@ -77,14 +74,14 @@ class Pt2Ch2CoroutineContextTest {
     }
 
     @Test
-    fun `test adding EmptyCoroutineContext doesn't modify existing CoroutineContext`() {
+    fun `adding EmptyCoroutineContext doesn't modify existing CoroutineContext`() {
         val original: CoroutineContext = CoroutineName("ctx Name")
         val modified = original + EmptyCoroutineContext
         assertEquals(original, modified)
     }
 
     @Test
-    fun `test minusKey removes elements from CoroutineContext`() {
+    fun `minusKey function removes elements from CoroutineContext`() {
         val ctx = CoroutineName("Name") + Job()
         val ctx2 = ctx.minusKey(CoroutineName)
         assertEquals(null, ctx2[CoroutineName])
@@ -94,21 +91,22 @@ class Pt2Ch2CoroutineContextTest {
     }
 
     @Test
-    fun `test fold function for accumulating over all elements in a CoroutineContext`() {
+    fun `fold function for accumulating over all elements in a CoroutineContext`() {
         val ctx = CoroutineName("Name") + Job()
         val folded = ctx.fold(" ") { accumulated, element -> "$accumulated$element " }
         assertTrue(folded.startsWith(" CoroutineName(Name) JobImpl{Active}@"))
     }
 
     @Test
-    fun `test CoroutineContext available from CoroutineScope`() {
+    fun `CoroutineContext available from CoroutineScope`() {
         runBlocking(CoroutineName("Name")) {
-            assertEquals("Name", coroutineContext[CoroutineName]?.name)
+            val scope = this
+            assertEquals("Name", scope.coroutineContext[CoroutineName]?.name)
         }
     }
 
     @Test
-    fun `test CoroutineContext available from suspending functions too via coroutineContext`() {
+    fun `CoroutineContext available from suspending functions too via coroutineContext`() {
         runBlocking {
             val name = async(CoroutineName("The Name")) {
                 delay(100)
@@ -123,12 +121,11 @@ class Pt2Ch2CoroutineContextTest {
     }
 
     @Test
-    fun `test child inherits context from it's parent`() {
+    fun `child inherits context from it's parent`() {
         runBlocking(CoroutineName("Parent")) {
             assertEquals("Parent", this.coroutineContext[CoroutineName]?.name)
 
             val childName = async {
-                delay(100)
                 this.coroutineContext[CoroutineName]?.name
             }
 
@@ -137,7 +134,7 @@ class Pt2Ch2CoroutineContextTest {
     }
 
     @Test
-    fun `test child can override context from it's parent`() {
+    fun `child can override context from it's parent`() {
         runBlocking(CoroutineName("Parent")) {
             assertEquals("Parent", this.coroutineContext[CoroutineName]?.name)
 
@@ -151,7 +148,7 @@ class Pt2Ch2CoroutineContextTest {
     }
 
     @Test
-    fun `test custom contexts obey inheritance and override rules as well`() {
+    fun `custom contexts obey inheritance and override rules as well`() {
         var parentValue: Int
         var childValueInherited: Int
         var childValueOverridden: Int
@@ -175,4 +172,75 @@ class Pt2Ch2CoroutineContextTest {
 
         companion object Key : CoroutineContext.Key<MyCustomContext>
     }
-}
+
+    @Test
+    fun `CoroutineScope is just a reference to a CoroutineContext`() {
+        GlobalScope.async {
+            val scope = this
+            assertTrue(scope.coroutineContext is CoroutineContext)
+        }
+    }
+
+    @Test
+    fun `Scope and Context only differ in their intended purpose`() {
+
+    }
+
+    @Test
+    fun `Scopes are used to launch coroutines, and take a Context as a parameter - the 2 contexts are merged`() =
+        runBlocking {
+            val mainScope = MainScope()
+            val mainScopeName = mainScope.coroutineContext[CoroutineName]
+            val mainScopeDispatcher = mainScope.coroutineContext[CoroutineDispatcher]
+            var launchedScopeName = ""
+            var launchedScopeDispatcher: CoroutineDispatcher? = null
+            mainScope.launch(CoroutineName("Context Name")) {
+                launchedScopeName = coroutineContext[CoroutineName]?.name ?: "fail"
+                launchedScopeDispatcher = coroutineContext[CoroutineDispatcher]
+            }.join()
+            assertEquals(mainScopeDispatcher, launchedScopeDispatcher)
+            assertEquals("Context Name", launchedScopeName)
+            assertEquals(null, mainScopeName)
+        }
+
+    @Test
+    fun `elements in the Context parameter take precedence over those in the Scope`() =
+        runBlocking {
+            val mainScope = MainScope()
+            val mainScopeDispatcher = mainScope.coroutineContext[CoroutineDispatcher]
+            var launchedScopeDispatcher: CoroutineDispatcher? = null
+            mainScope.launch(Dispatchers.IO) {
+                launchedScopeDispatcher = coroutineContext[CoroutineDispatcher]
+            }.join()
+            assertEquals(Dispatchers.Main, mainScopeDispatcher)
+            assertEquals(Dispatchers.IO, launchedScopeDispatcher)
+        }
+
+    @Test
+    fun `Nested Scope-dot-launch coroutine isn't a child of containing Scope-dot-launch coroutine`() = runBlocking {
+        var innerJob1: Job? = null
+        var innerJob2: Job? = null
+        val job1 = MainScope().launch {
+            innerJob1 = MainScope().launch {
+                delay(100)
+            }
+        }
+
+        val job2 = MainScope().launch {
+            innerJob2 = launch {
+                delay(100)
+            }
+        }
+        assertFalse(job1.children.contains(innerJob1))
+        assertTrue(job2.children.contains(innerJob2))
+    }
+
+        companion object {
+        @BeforeClass
+        @JvmStatic
+        fun beforeClass() {
+            Dispatchers.setMain(Dispatchers.Default)
+        }
+    }
+
+    }
