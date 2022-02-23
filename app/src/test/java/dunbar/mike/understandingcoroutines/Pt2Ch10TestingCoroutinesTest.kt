@@ -241,7 +241,7 @@ class Pt2Ch10TestingCoroutinesTest {
     }
 
     @Test
-    fun `to stay on virtual time and test timing dependencies, inject StandardTestDispatcher`() {
+    fun `to stay on virtual time and test timing dependencies in classes that switch dispatcher, inject StandardTestDispatcher`() {
         val codeToTest: suspend (CustReader, CoroutineDispatcher) -> Unit =
             { reader: CustReader, dispatcher: CoroutineDispatcher ->
                 withContext(dispatcher) {
@@ -249,11 +249,115 @@ class Pt2Ch10TestingCoroutinesTest {
                     reader.read()
                 }
             }
-
         runTest {
             val testDispatcher = this.coroutineContext[ContinuationInterceptor] as CoroutineDispatcher
             codeToTest.invoke(myFakeCustReader, testDispatcher)
             assertTrue(currentTime in 500..799)
         }
     }
+
+    data class State(var progressBarVisible: Boolean = false)
+
+    @Test
+    fun `to test things that happen during function execution, but aren't part of the end state, start the function in a new coroutine and advance virtual time to test points`() {
+
+        val codeToTest: suspend (State) -> Unit = { state: State ->
+            state.progressBarVisible = true
+            println("delaying")
+            delay(100) // do some work
+            println("done delaying")
+            state.progressBarVisible = false
+        }
+
+        runTest {
+            val state = State()
+
+            launch {
+                codeToTest.invoke(state)
+            }
+            assertEquals(false, state.progressBarVisible)
+
+            advanceTimeBy(50)
+            assertEquals(true, state.progressBarVisible)
+
+            advanceTimeBy(50)
+            runCurrent()
+            assertEquals(false, state.progressBarVisible)
+        }
+
+    }
+
+    data class Notification(val id: Int)
+    interface NotificationsRepo {
+        suspend fun getNotificationsToSend(): List<Notification>
+        suspend fun markAsSent(notification: Notification)
+    }
+
+    class FakeNotificationsRepo(
+        private val toSend: List<Notification>,
+        private val delayMillis: Long
+    ): NotificationsRepo {
+
+        val sentNotifications = mutableListOf<Notification>()
+
+        override suspend fun getNotificationsToSend(): List<Notification> {
+            delay(delayMillis)
+            return toSend
+        }
+
+        override suspend fun markAsSent(notification: Notification) {
+            delay(delayMillis)
+            sentNotifications.add(notification)
+        }
+    }
+
+    interface NotificationService {
+        suspend fun sendNotification(notification: Notification)
+    }
+
+    class FakeNotificationService(
+        private val delayMillis: Long
+    ) : NotificationService {
+
+        val sentNotifications = mutableListOf<Notification>()
+
+        override suspend fun sendNotification(notification: Notification) {
+            delay(delayMillis)
+            sentNotifications.add(notification)
+        }
+    }
+
+    @Test
+    fun `to test a function that starts a new coroutine (parallelism), inject TestScope and mock dependencies with artificial delays`() {
+        val codeToTest: (NotificationsRepo, NotificationService, CoroutineScope) -> Unit = {
+            repo: NotificationsRepo, svc: NotificationService, scope: CoroutineScope ->
+
+            scope.launch {
+                val notificationsToSend = repo.getNotificationsToSend()
+                for (notification in notificationsToSend) {
+                    launch {
+                        svc.sendNotification(notification)
+                        repo.markAsSent(notification)
+                    }
+                }
+            }
+        }
+
+        val notificationsToSend = List(20) { Notification(it) }
+        val fakeRepo = FakeNotificationsRepo(notificationsToSend, 100L)
+        val fakeService = FakeNotificationService(100L)
+        val testScope = TestScope()
+
+        codeToTest.invoke(fakeRepo,fakeService, testScope)
+        testScope.advanceUntilIdle()
+
+        // work was done
+        assertEquals(notificationsToSend.toSet(), fakeService.sentNotifications.toSet())
+        assertEquals(notificationsToSend.toSet(), fakeRepo.sentNotifications.toSet())
+
+        // work was done concurrently
+        assertEquals(300, testScope.currentTime)
+    }
+
+
 }
