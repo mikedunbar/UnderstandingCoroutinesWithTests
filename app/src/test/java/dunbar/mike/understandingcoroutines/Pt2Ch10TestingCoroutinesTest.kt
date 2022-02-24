@@ -1,5 +1,7 @@
 package dunbar.mike.understandingcoroutines
 
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.*
 import kotlinx.coroutines.test.*
 import org.junit.Assert.assertEquals
@@ -10,7 +12,7 @@ import kotlin.system.measureTimeMillis
 
 @ExperimentalCoroutinesApi
 class Pt2Ch10TestingCoroutinesTest {
-    interface Svc {
+    private interface Svc {
         suspend fun doThis()
         suspend fun doThat()
     }
@@ -174,12 +176,12 @@ class Pt2Ch10TestingCoroutinesTest {
             assertEquals(1000, currentTime)
         }
 
-    interface Repo {
+    private interface Repo {
         suspend fun getName(): String
         suspend fun getAge(): Int
     }
 
-    class FakeRepo : Repo {
+    private class FakeRepo : Repo {
         val deferredName = CompletableDeferred<String>()
         val deferredAge = CompletableDeferred<Int>()
 
@@ -187,7 +189,7 @@ class Pt2Ch10TestingCoroutinesTest {
         override suspend fun getAge() = deferredAge.await()
     }
 
-    class MySvc(private val repo: Repo) {
+    private class MySvc(private val repo: Repo) {
         suspend fun getGreeting(): String {
             return coroutineScope {
                 val name = async { repo.getName() }
@@ -214,18 +216,18 @@ class Pt2Ch10TestingCoroutinesTest {
         assertEquals(2000, currentTime)
     }
 
-    interface CustReader {
+    private interface CustReader {
         suspend fun read()
     }
 
-    class FakeCustReader : CustReader {
+    private class FakeCustReader : CustReader {
         var threadName: String? = null
 
         override suspend fun read() {
             threadName = Thread.currentThread().name
         }
     }
-    val myFakeCustReader = FakeCustReader()
+    private val myFakeCustReader = FakeCustReader()
 
     @Test
     fun ` to test dispatcher switching, capture thread names in a mock or fake`() {
@@ -256,7 +258,7 @@ class Pt2Ch10TestingCoroutinesTest {
         }
     }
 
-    data class State(var progressBarVisible: Boolean = false)
+    private data class State(var progressBarVisible: Boolean = false)
 
     @Test
     fun `to test things that happen during function execution, but aren't part of the end state, start the function in a new coroutine and advance virtual time to test points`() {
@@ -287,13 +289,13 @@ class Pt2Ch10TestingCoroutinesTest {
 
     }
 
-    data class Notification(val id: Int)
-    interface NotificationsRepo {
+    private data class Notification(val id: Int)
+    private interface NotificationsRepo {
         suspend fun getNotificationsToSend(): List<Notification>
         suspend fun markAsSent(notification: Notification)
     }
 
-    class FakeNotificationsRepo(
+    private class FakeNotificationsRepo(
         private val toSend: List<Notification>,
         private val delayMillis: Long
     ): NotificationsRepo {
@@ -311,11 +313,11 @@ class Pt2Ch10TestingCoroutinesTest {
         }
     }
 
-    interface NotificationService {
+    private interface NotificationService {
         suspend fun sendNotification(notification: Notification)
     }
 
-    class FakeNotificationService(
+    private class FakeNotificationService(
         private val delayMillis: Long
     ) : NotificationService {
 
@@ -357,6 +359,41 @@ class Pt2Ch10TestingCoroutinesTest {
 
         // work was done concurrently
         assertEquals(300, testScope.currentTime)
+    }
+
+    /**
+     * See [Pt2Ch2CoroutineContextAndScopeTest.beforeClass] and [Pt2Ch2CoroutineContextAndScopeTest.afterClass]
+     */
+    @Test
+    fun `to test code using Dispatchers-Main, call Dispatchers-setMain`() {
+
+    }
+
+    private class MyViewModel(): ViewModel() {
+        var progressBarVisible = false
+        fun onCreate() {
+            viewModelScope.launch {
+                progressBarVisible = true
+                delay(100)
+                progressBarVisible = false
+            }
+        }
+
+    }
+
+    @Test
+    fun `to test Android code using default ViewModelScope, call Dispatchers-setMain - it uses that`() {
+        val scheduler = TestCoroutineScheduler()
+        Dispatchers.setMain(StandardTestDispatcher(scheduler))
+        val viewModel = MyViewModel()
+
+        viewModel.onCreate()
+        assertEquals(false, viewModel.progressBarVisible)
+        scheduler.advanceTimeBy(100)
+        assertEquals(true, viewModel.progressBarVisible)
+        scheduler.runCurrent()
+        assertEquals(false, viewModel.progressBarVisible)
+        Dispatchers.resetMain()
     }
 
 

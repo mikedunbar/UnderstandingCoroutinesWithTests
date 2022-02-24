@@ -1,7 +1,9 @@
 package dunbar.mike.understandingcoroutines
 
 import kotlinx.coroutines.*
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
+import org.junit.AfterClass
 import org.junit.Assert.*
 import org.junit.BeforeClass
 import org.junit.Test
@@ -167,7 +169,7 @@ class Pt2Ch2CoroutineContextAndScopeTest {
         assertEquals(10, childValueOverridden)
     }
 
-    class MyCustomContext(val value: Int) : CoroutineContext.Element {
+    private class MyCustomContext(val value: Int) : CoroutineContext.Element {
         override val key: CoroutineContext.Key<*> = Key
 
         companion object Key : CoroutineContext.Key<MyCustomContext>
@@ -217,30 +219,37 @@ class Pt2Ch2CoroutineContextAndScopeTest {
         }
 
     @Test
-    fun `Nested Scope-dot-launch coroutine isn't a child of containing Scope-dot-launch coroutine`() = runBlocking {
-        var innerJob1: Job? = null
-        var innerJob2: Job? = null
-        val job1 = MainScope().launch {
-            innerJob1 = MainScope().launch {
-                delay(100)
+    fun `Nested Scope-dot-launch coroutine isn't a child of containing Scope-dot-launch coroutine`() =
+        runBlocking {
+            var innerJob1: Job? = null
+            var innerJob2: Job? = null
+            val job1 = MainScope().launch {
+                innerJob1 = MainScope().launch {
+                    delay(100)
+                }
             }
+
+            val job2 = MainScope().launch {
+                innerJob2 = launch {
+                    delay(100)
+                }
+            }
+            assertFalse(job1.children.contains(innerJob1))
+            assertTrue(job2.children.contains(innerJob2))
         }
 
-        val job2 = MainScope().launch {
-            innerJob2 = launch {
-                delay(100)
-            }
-        }
-        assertFalse(job1.children.contains(innerJob1))
-        assertTrue(job2.children.contains(innerJob2))
-    }
-
-        companion object {
+    companion object {
         @BeforeClass
         @JvmStatic
         fun beforeClass() {
             Dispatchers.setMain(Dispatchers.Default)
         }
+
+        @AfterClass
+        @JvmStatic
+        fun afterClass() {
+            Dispatchers.resetMain()
+        }
     }
 
-    }
+}
