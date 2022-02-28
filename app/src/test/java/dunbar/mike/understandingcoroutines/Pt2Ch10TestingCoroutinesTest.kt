@@ -30,7 +30,7 @@ class Pt2Ch10TestingCoroutinesTest {
     }
 
     @Test
-    fun `faked delays can be used to test timing perf, like parallelization vs sequential`() {
+    fun `faked delays (in test stubs) can be used to test timing perf, like parallelization vs sequential`() {
         val fakeDelayingSvc = object : Svc {
             override suspend fun doThis() {
                 delay(50)
@@ -200,7 +200,7 @@ class Pt2Ch10TestingCoroutinesTest {
     }
 
     @Test
-    fun `CompletableDeferred let's use move fake test delay from fakes to tests`() = runTest {
+    fun `CompletableDeferred let's use move fake test delay from stubs to tests`() = runTest {
         val fakeRepo = FakeRepo()
         val svc = MySvc(fakeRepo)
 
