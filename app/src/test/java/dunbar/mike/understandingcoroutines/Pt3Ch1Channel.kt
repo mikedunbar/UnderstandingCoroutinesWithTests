@@ -7,6 +7,7 @@ import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.channels.produce
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.currentTime
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -171,65 +172,123 @@ class Pt3Ch1Channel {
     }
 
     @Test
+    fun `The produce function returns a ReceiveChannel that closes when the builder coroutine ends in any way - stopped`() {}
+
+    @Test
+    fun `The produce function returns a ReceiveChannel that closes when the builder coroutine ends in any way - cancelled`() {}
+
+    @Test
     fun `There are 4 channel types, varying by capacity - Unlimited, Buffered, Rendezvous(default), Conflated`() {
         // see below
     }
 
     @Test
     fun `Channel-UNLIMITED has unlimited capacity and send never suspends`() = runTest {
+        val testScope = this
         var productionTime = 0L
-        val produceList = listOf("hello", "goodbye")
-        val channel = produce(capacity = Channel.UNLIMITED) {
-            val startTime = currentTime
-            for (element in produceList) {
-                send(element)
-            }
-            productionTime = currentTime - startTime
+        val produceList = listOf("hello", "goodbye", "goodnight")
+        val channel = produceReceiveChannel(testScope, Channel.UNLIMITED, produceList) { time: Long ->
+            productionTime = time
         }
 
-        val receiveList = mutableListOf<String>()
-        for (element in channel) {
-            receiveList.add(element)
-            delay(50)
+        var receiveList = listOf<Any>()
+        consumeReceiveChannel(testScope, channel, 50) {
+            println("list is $it")
+            receiveList = it
         }
+
         assertEquals(produceList, receiveList)
         assertEquals(0, productionTime)
-        assertEquals(100, currentTime)
+        assertEquals(150, currentTime)
     }
 
     @Test
     fun `Channel-BUFFERED has fixed capacity, defaulting to 64`() = runTest {
+        val testScope = this
         var productionTime = 0L
         val produceList = listOf("hello", "goodbye", "goodnight")
-        val channel = produce(capacity = 1) {
-            val startTime = currentTime
-            for (element in produceList) {
-                println("producing at $currentTime")
-                send(element)
-            }
-            productionTime = currentTime - startTime
+        val channel = produceReceiveChannel(testScope, 1, produceList) { time: Long ->
+            productionTime = time
         }
 
-        println("between times")
-        val receiveList = mutableListOf<String>()
-        for (element in channel) {
-            println("consuming at $currentTime")
-            receiveList.add(element)
-            delay(50)
+        var receiveList = listOf<Any>()
+        consumeReceiveChannel(testScope, channel, 50) {
+            println("list is $it")
+            receiveList = it
         }
+
         assertEquals(produceList, receiveList)
         assertEquals(50, productionTime) // doesn't suspend until capacity+1, it seems
         assertEquals(150, currentTime)
     }
 
     @Test
-    fun `Channel-RENDEZVOUS has zero capacity, so exchange only happens if sender and receiver meet`() {
+    fun `Channel-RENDEZVOUS has zero capacity, so exchange only happens if sender and receiver meet`() = runTest {
+        val testScope = this
+        var productionTime = 0L
+        val produceList = listOf("hello", "goodbye", "goodnight")
+        val channel = produceReceiveChannel(testScope, Channel.RENDEZVOUS, produceList) { time: Long ->
+            productionTime = time
+        }
 
+        var receiveList = listOf<Any>()
+        consumeReceiveChannel(testScope, channel, 50) {
+            println("list is $it")
+            receiveList = it
+        }
+
+        assertEquals(produceList, receiveList)
+        assertEquals(100, productionTime)
+        assertEquals(150, currentTime)
     }
 
     @Test
-    fun `Channel-CONFLATED has capacity of 1, and each new element replaces the previous`() {
+    fun `Channel-CONFLATED has capacity of 1, and each new element replaces the previous`() = runTest {
+        val testScope = this
+        var productionTime = 0L
+        val produceList = listOf("hello", "goodbye", "goodnight")
+        val channel = produceReceiveChannel(testScope, Channel.CONFLATED, produceList) { time: Long ->
+            productionTime = time
+        }
 
+        var receiveList = listOf<Any>()
+        consumeReceiveChannel(testScope, channel, 50) {
+            println("list is $it")
+            receiveList = it
+        }
+
+        assertEquals(listOf("hello", "goodnight"), receiveList) // elements are only replaced from the 2nd one on
+        assertEquals(0, productionTime)
+        assertEquals(100, currentTime)
     }
 
+    private fun produceReceiveChannel(
+        testScope: TestScope,
+        capacity: Int,
+        produceList: List<String>,
+        produceTimeCallback: (Long) -> Unit
+    ) =
+        testScope.produce(capacity = capacity) {
+            val startTime = testScope.currentTime
+            for (element in produceList) {
+                send(element)
+                println("element $element sent at ${testScope.currentTime}")
+            }
+            produceTimeCallback.invoke(testScope.currentTime - startTime)
+        }
+
+    private suspend fun consumeReceiveChannel(
+        scope: TestScope,
+        channel: ReceiveChannel<Any>,
+        delayAfterEachReceive: Long,
+        consumedListCallback: (List<Any>) -> Unit
+    ) {
+        val receiveList = mutableListOf<Any>()
+        for (element in channel) {
+            println("element received at ${scope.currentTime}")
+            receiveList.add(element)
+            delay(delayAfterEachReceive)
+        }
+        consumedListCallback(receiveList)
+    }
 }
