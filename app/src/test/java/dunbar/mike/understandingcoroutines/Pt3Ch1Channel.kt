@@ -272,33 +272,15 @@ class Pt3Ch1Channel {
     @Test
     fun `onBufferOverflow = SUSPEND (default), makes send suspend when the buffer is full`() =
         runTest {
-            val testScope = this
-            var productionTime = 0L
-            val produceList = listOf("hello", "goodbye", "goodnight")
             val channel = Channel<String>(
                 capacity = 1,
                 onBufferOverflow = BufferOverflow.SUSPEND
             )
 
-            launch {
-                val startTime = currentTime
-                for (element in produceList) {
-                    channel.send(element)
-                    println("$element sent at $currentTime")
-                }
-                channel.close()
-                productionTime = currentTime - startTime
-            }
-
-            var receiveList = listOf<Any>()
-            consumeReceiveChannel(testScope, channel, 50) {
-                println("list is $it")
-                receiveList = it
-            }
-
-            assertEquals(produceList, receiveList)
-            assertEquals(50, productionTime) // doesn't suspend until capacity+1, it seems
-            assertEquals(150, currentTime)
+            val res1 = channel.trySend("one")
+            val res2 = channel.trySend("two")
+            assertEquals(true, res1.isSuccess)
+            assertEquals(false, res2.isSuccess)
         }
 
     @Test
