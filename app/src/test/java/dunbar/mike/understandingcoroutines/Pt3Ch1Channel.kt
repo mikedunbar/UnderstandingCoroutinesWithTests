@@ -1,10 +1,7 @@
 package dunbar.mike.understandingcoroutines
 
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.ReceiveChannel
-import kotlinx.coroutines.channels.SendChannel
-import kotlinx.coroutines.channels.produce
+import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
@@ -115,7 +112,7 @@ class Pt3Ch1Channel {
         }
 
     @Test
-    fun `SendChannel-send on a buffered channel suspends if the channel is at capacity`() {
+    fun `SendChannel-send on a buffered channel suspends (by default) if the channel is at capacity`() {
         runTest {
             val bufferedChannel = Channel<Int>(1)
             var timeToSendAfterCapacity = 0L
@@ -172,10 +169,12 @@ class Pt3Ch1Channel {
     }
 
     @Test
-    fun `The produce function returns a ReceiveChannel that closes when the builder coroutine ends in any way - stopped`() {}
+    fun `The produce function returns a ReceiveChannel that closes when the builder coroutine ends in any way - stopped`() {
+    }
 
     @Test
-    fun `The produce function returns a ReceiveChannel that closes when the builder coroutine ends in any way - cancelled`() {}
+    fun `The produce function returns a ReceiveChannel that closes when the builder coroutine ends in any way - cancelled`() {
+    }
 
     @Test
     fun `There are 4 channel types, varying by capacity - Unlimited, Buffered, Rendezvous(default), Conflated`() {
@@ -187,9 +186,10 @@ class Pt3Ch1Channel {
         val testScope = this
         var productionTime = 0L
         val produceList = listOf("hello", "goodbye", "goodnight")
-        val channel = produceReceiveChannel(testScope, Channel.UNLIMITED, produceList) { time: Long ->
-            productionTime = time
-        }
+        val channel =
+            produceReceiveChannel(testScope, Channel.UNLIMITED, produceList) { time: Long ->
+                productionTime = time
+            }
 
         var receiveList = listOf<Any>()
         consumeReceiveChannel(testScope, channel, 50) {
@@ -223,43 +223,128 @@ class Pt3Ch1Channel {
     }
 
     @Test
-    fun `Channel-RENDEZVOUS has zero capacity, so exchange only happens if sender and receiver meet`() = runTest {
-        val testScope = this
-        var productionTime = 0L
-        val produceList = listOf("hello", "goodbye", "goodnight")
-        val channel = produceReceiveChannel(testScope, Channel.RENDEZVOUS, produceList) { time: Long ->
-            productionTime = time
+    fun `Channel-RENDEZVOUS has zero capacity, so exchange only happens if sender and receiver meet`() =
+        runTest {
+            val testScope = this
+            var productionTime = 0L
+            val produceList = listOf("hello", "goodbye", "goodnight")
+            val channel =
+                produceReceiveChannel(testScope, Channel.RENDEZVOUS, produceList) { time: Long ->
+                    productionTime = time
+                }
+
+            var receiveList = listOf<Any>()
+            consumeReceiveChannel(testScope, channel, 50) {
+                println("list is $it")
+                receiveList = it
+            }
+
+            assertEquals(produceList, receiveList)
+            assertEquals(100, productionTime)
+            assertEquals(150, currentTime)
         }
 
+    @Test
+    fun `Channel-CONFLATED has capacity of 1, and each new element replaces the previous`() =
+        runTest {
+            val testScope = this
+            var productionTime = 0L
+            val produceList = listOf("hello", "goodbye", "goodnight")
+            val channel =
+                produceReceiveChannel(testScope, Channel.CONFLATED, produceList) { time: Long ->
+                    productionTime = time
+                }
+
+            var receiveList = listOf<Any>()
+            consumeReceiveChannel(testScope, channel, 50) {
+                println("list is $it")
+                receiveList = it
+            }
+
+            assertEquals(
+                listOf("hello", "goodnight"),
+                receiveList
+            ) // elements are only replaced from the 2nd one on
+            assertEquals(0, productionTime)
+            assertEquals(100, currentTime)
+        }
+
+    @Test
+    fun `onBufferOverflow = SUSPEND (default), makes send suspend when the buffer is full`() =
+        runTest {
+            val testScope = this
+            var productionTime = 0L
+            val produceList = listOf("hello", "goodbye", "goodnight")
+            val channel = Channel<String>(
+                capacity = 1,
+                onBufferOverflow = BufferOverflow.SUSPEND
+            )
+
+            launch {
+                val startTime = currentTime
+                for (element in produceList) {
+                    channel.send(element)
+                    println("$element sent at $currentTime")
+                }
+                channel.close()
+                productionTime = currentTime - startTime
+            }
+
+            var receiveList = listOf<Any>()
+            consumeReceiveChannel(testScope, channel, 50) {
+                println("list is $it")
+                receiveList = it
+            }
+
+            assertEquals(produceList, receiveList)
+            assertEquals(50, productionTime) // doesn't suspend until capacity+1, it seems
+            assertEquals(150, currentTime)
+        }
+
+    @Test
+    fun `onBufferOverflow = DROP_OLDEST, drops oldest when the buffer is full`() = runTest {
+        val testScope = this
+        val produceList = listOf("hello", "goodbye", "goodnight", "one", "two", "three")
+        val channel = Channel<String>(
+            capacity = 1,
+            onBufferOverflow = BufferOverflow.DROP_OLDEST
+        )
+
+        for (element in produceList) {
+            println("Sending $element")
+            channel.send(element)
+        }
+        channel.close()
+
+
         var receiveList = listOf<Any>()
-        consumeReceiveChannel(testScope, channel, 50) {
+        consumeReceiveChannel(testScope, channel, 0) {
             println("list is $it")
             receiveList = it
         }
 
-        assertEquals(produceList, receiveList)
-        assertEquals(100, productionTime)
-        assertEquals(150, currentTime)
+        assertEquals(listOf("three"), receiveList)
     }
 
     @Test
-    fun `Channel-CONFLATED has capacity of 1, and each new element replaces the previous`() = runTest {
+    fun `onBufferOverflow = DROP_LATEST, drops latest when the buffer is full`() = runTest {
         val testScope = this
-        var productionTime = 0L
         val produceList = listOf("hello", "goodbye", "goodnight")
-        val channel = produceReceiveChannel(testScope, Channel.CONFLATED, produceList) { time: Long ->
-            productionTime = time
+        val channel = Channel<String>(capacity = 1, onBufferOverflow = BufferOverflow.DROP_LATEST)
+
+        for (element in produceList) {
+            println("Sending $element")
+            channel.send(element)
         }
+        channel.close()
 
         var receiveList = listOf<Any>()
-        consumeReceiveChannel(testScope, channel, 50) {
+        consumeReceiveChannel(testScope, channel, 0) {
             println("list is $it")
             receiveList = it
         }
 
-        assertEquals(listOf("hello", "goodnight"), receiveList) // elements are only replaced from the 2nd one on
-        assertEquals(0, productionTime)
-        assertEquals(100, currentTime)
+        assertEquals(listOf("hello"), receiveList)
     }
 
     private fun produceReceiveChannel(
@@ -280,14 +365,14 @@ class Pt3Ch1Channel {
     private suspend fun consumeReceiveChannel(
         scope: TestScope,
         channel: ReceiveChannel<Any>,
-        delayAfterEachReceive: Long,
+        delayBeforeEachReceive: Long,
         consumedListCallback: (List<Any>) -> Unit
     ) {
         val receiveList = mutableListOf<Any>()
         for (element in channel) {
-            println("element received at ${scope.currentTime}")
+            delay(delayBeforeEachReceive)
             receiveList.add(element)
-            delay(delayAfterEachReceive)
+            println("element $element received at ${scope.currentTime}")
         }
         consumedListCallback(receiveList)
     }
