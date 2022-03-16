@@ -133,6 +133,12 @@ class Pt3Ch1Channel {
     }
 
     @Test
+    fun `SendChannel-send on a rendezvous channel suspends until received`() {
+
+    }
+
+
+    @Test
     fun `SendChannel-trySend on a buffered channel does not suspend, but immediately returns ChannelResult`() {
         runTest {
             val bufferedChannel = Channel<Int>(1)
@@ -328,6 +334,32 @@ class Pt3Ch1Channel {
 
         assertEquals(listOf("hello"), receiveList)
     }
+
+    @Test
+    fun `onUndeliveredElement is called when an element can't be delivered, and is typically used to close resources`() {
+        var undelivered = "nothing"
+
+        try {
+            runTest {
+                val onUndeliveredElement = { s: String ->
+                    println("can't deliver that shit")
+                    undelivered = s
+                }
+
+                val channel = Channel(capacity = 1, onUndeliveredElement = onUndeliveredElement)
+                channel.send("hi")
+                channel.close()
+                println("sending after close")
+                channel.send("something")
+                println("done running test")
+            }
+        } catch (t: Throwable) {
+            println("Caught that shit")
+        }
+        assertEquals("something", undelivered)
+        println("done with test method")
+    }
+
 
     private fun produceReceiveChannel(
         testScope: TestScope,

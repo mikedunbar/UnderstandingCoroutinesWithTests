@@ -158,7 +158,7 @@ class Pt2Ch3JobTest {
     }
 
     @Test
-    fun `factory function fake constructor returns a CompletableJob`() {
+    fun `Job() factory function fake constructor returns a CompletableJob`() {
         val job = Job()
         assertTrue(job is CompletableJob)
     }
