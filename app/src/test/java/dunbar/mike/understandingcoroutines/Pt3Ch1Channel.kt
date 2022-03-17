@@ -5,6 +5,7 @@ import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.currentTime
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -360,33 +361,94 @@ class Pt3Ch1Channel {
         println("done with test method")
     }
 
+    @Test
+    fun `Fan-out, multiple coroutines receiving from a single channel, distributes fairly`() =
+        runTest {
+            val testScope = this
+            //produce 1-9 from single channel
+            val numbers = produceReceiveChannel(this, Channel.UNLIMITED, (1..9).toList()) {}
 
-    private fun produceReceiveChannel(
+            //consume from 3 coroutines, see it goes (1,4,7) , (2,5,8) , (3,6,9)
+            var consumedListOne = listOf(-1)
+            var consumedListTwo = listOf(-1)
+            var consumedListThree = listOf(-1)
+
+            launch { consumeInCoroutine(testScope, "one", numbers, 10) { consumedListOne = it } }
+            launch { consumeInCoroutine(testScope, "two", numbers, 10) { consumedListTwo = it } }
+            launch { consumeInCoroutine(testScope, "three", numbers, 10) { consumedListThree = it } }
+            advanceUntilIdle()
+            assertEquals(listOf(1, 4, 7), consumedListOne)
+            assertEquals(listOf(2, 5, 8), consumedListTwo)
+            assertEquals(listOf(3, 6, 9), consumedListThree)
+        }
+
+    private suspend fun consumeInCoroutine(
+        testScope: TestScope,
+        consumerId: String,
+        numbers: ReceiveChannel<Int>,
+        delayBeforeEachReceive: Long,
+        consumedListCallback: (List<Int>) -> Unit
+    ) {
+        println("consumer $consumerId started at ${testScope.currentTime}")
+        consumeReceiveChannel(
+            testScope,
+            numbers,
+            delayBeforeEachReceive,
+            consumerId,
+            consumedListCallback
+        )
+    }
+
+    @Test
+    fun `Fan-in, multiple coroutines sending to a single channel, can be done with the produce function `() {
+//        fun <T> CoroutineScope.fanIn(
+//            channels: List<ReceiveChannel<T>>
+//        ): ReceiveChannel<T> = produce {
+//            for (channel in channels) {
+//                launch {
+//                    for (elem in channel) {
+//                        send(elem)
+//                    }
+//                }
+//            }
+//        }
+    }
+
+    @Test
+    fun `pipeline, one channel producing elements based on those received from another, ---`() {
+
+        // numbers p1, squared p2
+    }
+
+    private fun <T> produceReceiveChannel(
         testScope: TestScope,
         capacity: Int,
-        produceList: List<String>,
+        produceList: List<T>,
+        delayBeforeEachSend: Long = 0,
         produceTimeCallback: (Long) -> Unit
     ) =
         testScope.produce(capacity = capacity) {
             val startTime = testScope.currentTime
             for (element in produceList) {
+                delay(delayBeforeEachSend)
                 send(element)
                 println("element $element sent at ${testScope.currentTime}")
             }
             produceTimeCallback.invoke(testScope.currentTime - startTime)
         }
 
-    private suspend fun consumeReceiveChannel(
+    private suspend fun <T> consumeReceiveChannel(
         scope: TestScope,
-        channel: ReceiveChannel<Any>,
+        channel: ReceiveChannel<T>,
         delayBeforeEachReceive: Long,
-        consumedListCallback: (List<Any>) -> Unit
+        id: String = "anon",
+        consumedListCallback: (List<T>) -> Unit
     ) {
-        val receiveList = mutableListOf<Any>()
+        val receiveList = mutableListOf<T>()
         for (element in channel) {
             delay(delayBeforeEachReceive)
             receiveList.add(element)
-            println("element $element received at ${scope.currentTime}")
+            println("element $element received by $id at ${scope.currentTime}")
         }
         consumedListCallback(receiveList)
     }
