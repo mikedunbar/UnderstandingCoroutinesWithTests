@@ -7,7 +7,7 @@ import org.junit.Test
 import java.util.*
 
 @ExperimentalCoroutinesApi
-class Pt2Ch4CancellationTest {
+class Pt2Ch4Cancellation {
     private val ints = Collections.synchronizedList(mutableListOf<Int>())
 
     @Test

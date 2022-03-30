@@ -5,7 +5,7 @@ import org.junit.Assert.*
 import org.junit.Test
 
 @DelicateCoroutinesApi
-class Pt2Ch6CoroutineScopeFunctionsTest {
+class Pt2Ch6CoroutineScopeFunctions {
 
     private suspend fun networkFetch1(): Int {
         delay(50)

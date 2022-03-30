@@ -7,7 +7,7 @@ import org.junit.Test
 import java.util.*
 
 @DelicateCoroutinesApi
-class Pt2Ch1CoroutineBuildersAndBasicsTest {
+class Pt2Ch1CoroutineBuildersAndBasics {
 
     private val strings = Collections.synchronizedList(mutableListOf<String>())
 

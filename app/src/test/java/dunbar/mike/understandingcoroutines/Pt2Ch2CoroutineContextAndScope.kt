@@ -15,7 +15,7 @@ import kotlin.coroutines.coroutineContext
 @ExperimentalCoroutinesApi
 @DelicateCoroutinesApi
 @ExperimentalStdlibApi
-class Pt2Ch2CoroutineContextAndScopeTest {
+class Pt2Ch2CoroutineContextAndScope {
 
     @Test
     fun `CoroutineName implements CoroutineContext-dot-Element, which implements CoroutineContext`() {
@@ -93,7 +93,7 @@ class Pt2Ch2CoroutineContextAndScopeTest {
     }
 
     @Test
-    fun `fold function for accumulating over all elements in a CoroutineContext`() {
+    fun `fold function is for accumulating over all elements in a CoroutineContext`() {
         val ctx = CoroutineName("Name") + Job()
         val folded = ctx.fold(" ") { accumulated, element -> "$accumulated$element " }
         assertTrue(folded.startsWith(" CoroutineName(Name) JobImpl{Active}@"))

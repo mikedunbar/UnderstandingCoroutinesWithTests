@@ -11,7 +11,7 @@ import kotlin.coroutines.ContinuationInterceptor
 import kotlin.system.measureTimeMillis
 
 @ExperimentalCoroutinesApi
-class Pt2Ch10TestingCoroutinesTest {
+class Pt2Ch10TestingCoroutines {
     private interface Svc {
         suspend fun doThis()
         suspend fun doThat()
@@ -362,7 +362,7 @@ class Pt2Ch10TestingCoroutinesTest {
     }
 
     /**
-     * See [Pt2Ch2CoroutineContextAndScopeTest.beforeClass] and [Pt2Ch2CoroutineContextAndScopeTest.afterClass]
+     * See [Pt2Ch2CoroutineContextAndScope.beforeClass] and [Pt2Ch2CoroutineContextAndScope.afterClass]
      */
     @Test
     fun `to test code using Dispatchers-Main, call Dispatchers-setMain`() {

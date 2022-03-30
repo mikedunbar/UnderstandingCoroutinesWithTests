@@ -21,7 +21,7 @@ import kotlin.coroutines.CoroutineContext
  *
  */
 @DelicateCoroutinesApi
-class Pt2Ch3JobTest {
+class Pt2Ch3Job {
 
     @Test
     fun `Coroutines are represented by Jobs, launch returns a Job`() {
@@ -99,7 +99,7 @@ class Pt2Ch3JobTest {
     }
 
     @Test
-    fun `Job implement CoroutineContext and can be access from there`() {
+    fun `Job implements CoroutineContext and can be access from there`() {
         GlobalScope.launch {
             val job: Job? = coroutineContext[Job]
             assertNotNull(job)
