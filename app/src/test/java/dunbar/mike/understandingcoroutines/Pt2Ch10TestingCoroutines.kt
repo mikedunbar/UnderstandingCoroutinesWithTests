@@ -7,6 +7,7 @@ import kotlinx.coroutines.test.*
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.lang.Thread.sleep
 import kotlin.coroutines.ContinuationInterceptor
 import kotlin.system.measureTimeMillis
 
@@ -52,7 +53,7 @@ class Pt2Ch10TestingCoroutines {
             }
         }
         println("parallelConsumerTime=$parallelConsumerTime, sequentialConsumerTime=$sequentialConsumerTime")
-        assertTrue("parallel execution time between 50 and 9ms", parallelConsumerTime in 50..99)
+        assertTrue("parallel execution time between 50 and 99ms", parallelConsumerTime in 50..99)
         assertTrue("sequential execution time at least 100ms", sequentialConsumerTime >= 100)
     }
 
@@ -155,7 +156,7 @@ class Pt2Ch10TestingCoroutines {
     }
 
     @Test
-    fun `runTest start a coroutine with TestScope and advances until idle`() = runTest {
+    fun `runTest starts a coroutine with TestScope and advances until idle`() = runTest {
         assertEquals(0, currentTime)
         delay(1000)
         assertEquals(1000, currentTime)
@@ -394,6 +395,30 @@ class Pt2Ch10TestingCoroutines {
         scheduler.runCurrent()
         assertEquals(false, viewModel.progressBarVisible)
         Dispatchers.resetMain()
+    }
+
+    // prod problem simulation
+    private class MyViewModel2(val dispatcher: CoroutineDispatcher): ViewModel() {
+        var didWork = false
+        fun doTheWork() {
+            println("starting the work")
+            viewModelScope.launch (dispatcher) {
+                println("launch coroutine, delaying for 100")
+                sleep(10)
+                didWork = true
+            }
+        }
+    }
+
+    @Test
+    fun `test ViewModel using Dispatchers-dot-IO`() = runTest {
+        val testDispatcher = StandardTestDispatcher()
+        val testScheduler = testDispatcher.scheduler
+
+        val viewModel2 = MyViewModel2(testDispatcher)
+        viewModel2.doTheWork()
+        testScheduler.advanceUntilIdle()
+        assertEquals(true, viewModel2.didWork)
     }
 
 

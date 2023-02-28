@@ -76,7 +76,6 @@ class Pt2Ch3Job {
         assertFalse(job.isActive)
     }
 
-
     @Test
     fun `cancel moves a Job to Cancelled state`() {
         val job = Job()

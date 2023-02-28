@@ -29,7 +29,7 @@ class Pt2Ch6CoroutineScopeFunctions {
         }
 
     @Test
-    fun `wrapping calls to 2 suspend functions with GlobalScope - async is concurrent, but loses relationship with parent coroutine`() =
+    fun `wrapping calls to 2 suspend functions with GlobalScope -dot- async is concurrent, but loses relationship with parent coroutine`() =
         runBlocking {
             lateinit var part1: Deferred<Int>
             lateinit var part2: Deferred<Int>

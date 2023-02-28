@@ -108,7 +108,4 @@ class Pt2Ch9TheProblemWithState {
         println("count=$counter")
         assertEquals(runCount, counter)
     }
-
-
-
 }

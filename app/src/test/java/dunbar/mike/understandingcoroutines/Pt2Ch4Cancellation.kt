@@ -161,7 +161,7 @@ class Pt2Ch4Cancellation {
                     }
                 } finally {
                     ints.clear()
-                    // try to suspend, get exception
+                    // suspend without exception
                     try {
                         withContext(NonCancellable) {
                             delay(100)
