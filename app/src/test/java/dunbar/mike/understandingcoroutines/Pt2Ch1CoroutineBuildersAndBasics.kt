@@ -150,7 +150,7 @@ class Pt2Ch1CoroutineBuildersAndBasics {
     }
 
     @Test
-    fun `async coroutine builder - DeferredResult's await method suspends until value ready`() =
+    fun `async coroutine builder - DeferredResult's await method suspends until value returned`() =
         runBlocking {
             val startTime = System.currentTimeMillis()
             val resultDeferred: Deferred<Int> = async {
@@ -181,7 +181,7 @@ class Pt2Ch1CoroutineBuildersAndBasics {
             "Text3"
         }
 
-        delay(3000) // async here would be redundant
+        delay(3000)
         val result4 = "Text4"
 
         strings.add(result1.await())
