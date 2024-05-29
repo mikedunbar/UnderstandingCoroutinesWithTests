@@ -13,6 +13,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.util.*
 
+@Suppress("USELESS_IS_CHECK")
 @ExperimentalCoroutinesApi
 class Pt3Ch1Channel {
 
@@ -72,6 +73,7 @@ class Pt3Ch1Channel {
         assertEquals(allSent, allReceived)
     }
 
+    @Suppress("UNUSED_VARIABLE")
     @Test
     fun `Channels can specify a capacity, called a buffered channel - Channels without a set capacity are called rendezvous`() {
         val bufferedChannel = Channel<Int>(5)

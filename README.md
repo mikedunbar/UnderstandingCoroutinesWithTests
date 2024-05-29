@@ -11,3 +11,6 @@ For a deeper review, the tests can be run, studied, updated, etc.
 
 ![Test Method Bodies](docs/TestMethodBodies.png)
 
+Diagrams included when it makes sense
+
+![Diagram](docs/Diagram.png)

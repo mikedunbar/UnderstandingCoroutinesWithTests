@@ -16,7 +16,7 @@ import org.junit.Test
  *  Actors can only directly modify their own private state
  *  Actors don't need synchronization, because each runs on a single thread and handles messages on at a time
  */
-@OptIn(ExperimentalCoroutinesApi::class)
+@OptIn(ExperimentalCoroutinesApi::class, ObsoleteCoroutinesApi::class)
 class Pt3Ch2Actors {
 
     @Test

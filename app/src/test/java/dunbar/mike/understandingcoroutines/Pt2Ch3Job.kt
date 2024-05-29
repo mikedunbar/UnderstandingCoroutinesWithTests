@@ -20,6 +20,7 @@ import kotlin.coroutines.CoroutineContext
  *
  *
  */
+@Suppress("USELESS_IS_CHECK")
 @DelicateCoroutinesApi
 class Pt2Ch3Job {
 
@@ -108,7 +109,7 @@ class Pt2Ch3Job {
     }
 
     @Test
-    fun `Job can be access from CoroutineContext job extension function`() {
+    fun `Job can be accessed from CoroutineContext's job extension function`() {
         GlobalScope.launch {
             val job: Job = coroutineContext.job
             assertNotNull(job)

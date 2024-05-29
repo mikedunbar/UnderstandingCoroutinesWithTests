@@ -15,6 +15,7 @@ import kotlin.coroutines.coroutineContext
 @ExperimentalCoroutinesApi
 @DelicateCoroutinesApi
 @ExperimentalStdlibApi
+@Suppress("USELESS_IS_CHECK", "DeferredResultUnused")
 class Pt2Ch2CoroutineContextAndScope {
 
     @Test

@@ -11,6 +11,7 @@ import java.lang.Thread.sleep
 import kotlin.coroutines.ContinuationInterceptor
 import kotlin.system.measureTimeMillis
 
+@Suppress("USELESS_IS_CHECK")
 @ExperimentalCoroutinesApi
 class Pt2Ch10TestingCoroutines {
     private interface Svc {
@@ -122,6 +123,7 @@ class Pt2Ch10TestingCoroutines {
         assertEquals("goodbye", b)
     }
 
+    @Suppress("RemoveRedundantQualifierName")
     @Test
     fun `Thread-sleep() does not influence virtual time`() {
         val testDispatcher = StandardTestDispatcher()
@@ -370,7 +372,7 @@ class Pt2Ch10TestingCoroutines {
 
     }
 
-    private class MyViewModel(): ViewModel() {
+    private class MyViewModel: ViewModel() {
         var progressBarVisible = false
         fun onCreate() {
             viewModelScope.launch {

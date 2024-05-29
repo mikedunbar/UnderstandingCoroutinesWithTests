@@ -21,6 +21,7 @@ import kotlin.system.measureTimeMillis
  *      A bigger pool of threads, than Default
  * Suspending vs Blocking...(need to understand better)
  */
+@Suppress("USELESS_IS_CHECK")
 @DelicateCoroutinesApi
 class Pt2Ch7Dispatchers {
 
