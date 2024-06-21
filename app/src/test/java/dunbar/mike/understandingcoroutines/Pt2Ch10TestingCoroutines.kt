@@ -2,8 +2,28 @@ package dunbar.mike.understandingcoroutines
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.*
-import kotlinx.coroutines.test.*
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestCoroutineScheduler
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.currentTime
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.withContext
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -179,6 +199,26 @@ class Pt2Ch10TestingCoroutines {
             assertEquals(1000, currentTime)
         }
 
+    @Test
+    fun `StandardTestDispatcher DOES NOT eagerly start new coroutines, it's necessary to yield before asserting on their work`() =
+        runTest { // uses StandardTestDispatcher by default
+            val list = mutableListOf<Int>()
+            launch {list.add(1) }
+            launch {list.add(2) }
+            advanceUntilIdle()  // yields
+            assertEquals(listOf(1, 2), list)
+        }
+
+    @Test
+    fun `UnconfinedTestDispatcher eagerly starts new coroutines, and it's not necessary to yield before asserting on their work`() =
+        runTest(UnconfinedTestDispatcher()) {
+            val list = mutableListOf<Int>()
+            launch {list.add(1) }
+            launch {list.add(2) }
+            // no yield needed
+            assertEquals(listOf(1, 2), list)
+        }
+
     private interface Repo {
         suspend fun getName(): String
         suspend fun getAge(): Int
@@ -230,6 +270,7 @@ class Pt2Ch10TestingCoroutines {
             threadName = Thread.currentThread().name
         }
     }
+
     private val myFakeCustReader = FakeCustReader()
 
     @Test
@@ -301,7 +342,7 @@ class Pt2Ch10TestingCoroutines {
     private class FakeNotificationsRepo(
         private val toSend: List<Notification>,
         private val delayMillis: Long
-    ): NotificationsRepo {
+    ) : NotificationsRepo {
 
         val sentNotifications = mutableListOf<Notification>()
 
@@ -334,26 +375,26 @@ class Pt2Ch10TestingCoroutines {
 
     @Test
     fun `to test a function that starts a new coroutine (parallelism), inject TestScope and mock dependencies with artificial delays`() {
-        val codeToTest: (NotificationsRepo, NotificationService, CoroutineScope) -> Unit = {
-            repo: NotificationsRepo, svc: NotificationService, scope: CoroutineScope ->
+        val codeToTest: (NotificationsRepo, NotificationService, CoroutineScope) -> Unit =
+            { repo: NotificationsRepo, svc: NotificationService, scope: CoroutineScope ->
 
-            scope.launch {
-                val notificationsToSend = repo.getNotificationsToSend()
-                for (notification in notificationsToSend) {
-                    launch {
-                        svc.sendNotification(notification)
-                        repo.markAsSent(notification)
+                scope.launch {
+                    val notificationsToSend = repo.getNotificationsToSend()
+                    for (notification in notificationsToSend) {
+                        launch {
+                            svc.sendNotification(notification)
+                            repo.markAsSent(notification)
+                        }
                     }
                 }
             }
-        }
 
         val notificationsToSend = List(20) { Notification(it) }
         val fakeRepo = FakeNotificationsRepo(notificationsToSend, 100L)
         val fakeService = FakeNotificationService(100L)
         val testScope = TestScope()
 
-        codeToTest.invoke(fakeRepo,fakeService, testScope)
+        codeToTest.invoke(fakeRepo, fakeService, testScope)
         testScope.advanceUntilIdle()
 
         // work was done
@@ -372,7 +413,7 @@ class Pt2Ch10TestingCoroutines {
 
     }
 
-    private class MyViewModel: ViewModel() {
+    private class MyViewModel : ViewModel() {
         var progressBarVisible = false
         fun onCreate() {
             viewModelScope.launch {
@@ -400,11 +441,11 @@ class Pt2Ch10TestingCoroutines {
     }
 
     // prod problem simulation
-    private class MyViewModel2(val dispatcher: CoroutineDispatcher): ViewModel() {
+    private class MyViewModel2(val dispatcher: CoroutineDispatcher) : ViewModel() {
         var didWork = false
         fun doTheWork() {
             println("starting the work")
-            viewModelScope.launch (dispatcher) {
+            viewModelScope.launch(dispatcher) {
                 println("launch coroutine, delaying for 100")
                 sleep(10)
                 didWork = true
